@@ -1,8 +1,10 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
 from sqlalchemy.orm import relationship
-from app.database import Base
+from sqlalchemy.ext.declarative import declarative_base
 
 from datetime import datetime
+
+Base = declarative_base()
 
 # ==================== СВЯЗУЮЩИЕ ТАБЛИЦЫ (Many-to-Many) ====================
 
@@ -32,7 +34,7 @@ service_pc_association = Table(
 class Person(Base):
     __tablename__ = "persons"
 
-    person_id = Column(Integer, primary_key=True, index=True)
+    person_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
     phone = Column(String)
     email = Column(String)
@@ -44,19 +46,20 @@ class Person(Base):
 class Cert(Base):
     __tablename__ = "certs"
 
-    cert_id = Column(Integer, primary_key=True, index=True)
+    cert_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
     version = Column(String)
     date_from = Column(DateTime)
     date_to = Column(DateTime)
 
     # Внешние ключи
-    person_id = Column(Integer, ForeignKey("Person.person_id"), nullable=False)
-    org_id = Column(Integer, ForeignKey("Org.org_id"), nullable=False)
+    person_id = Column(Integer, ForeignKey("persons.person_id"), nullable=False)
+    org_id = Column(Integer, ForeignKey("orgs.org_id"), nullable=False)
     # Связи
     person = relationship("Person", back_populates="cert")
     org = relationship("Org", back_populates="cert")
     # Связь Many-to-Many с PCs
-    pc = relationship("Pc", secondary=cert_pc_association, back_populates="cert")
+    pc = relationship("PC", secondary=cert_pc_association, back_populates="cert")
 
     @property
     def is_active(self):
@@ -72,10 +75,11 @@ class Cert(Base):
         today = datetime.now().date()
         return (self.Date_to - today).days
 
+
 class Org(Base):
     __tablename__ = "orgs"
 
-    org_id = Column(Integer, primary_key=True, index=True)
+    org_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
     url = Column(String)
 
@@ -86,19 +90,19 @@ class Org(Base):
 class User(Base):
     __tablename__ = 'users'
 
-    user_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
     Email = Column(String)
     Phone = Column(String)
     Name = Column(String)
 
     # Связи Many-to-Many с PCs
-    pc = relationship("Pc", secondary=user_pc_association, back_populates="user")
+    pc = relationship("PC", secondary=user_pc_association, back_populates="user")
 
 
 class PC(Base):
     __tablename__ = 'pcs'
 
-    pc_id = Column(Integer, primary_key=True)
+    pc_id = Column(Integer, primary_key=True, autoincrement=True)
     Name = Column(String)
     Aud = Column(String)
 
@@ -107,3 +111,12 @@ class PC(Base):
     cert = relationship("Cert", secondary=cert_pc_association, back_populates="pc")
     service = relationship("Service", secondary=service_pc_association, back_populates="pc")
 
+
+class Service(Base):
+    __tablename__ = 'services'
+
+    service_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    url = Column(String)
+
+    pc = relationship("PC", secondary=service_pc_association, back_populates="service")
