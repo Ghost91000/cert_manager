@@ -8,13 +8,6 @@ Base = declarative_base()
 
 # ==================== СВЯЗУЮЩИЕ ТАБЛИЦЫ (Many-to-Many) ====================
 
-# Таблица Users ↔ PCs
-user_pc_association = Table(
-    'user_pc', Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.user_id'), primary_key=True),
-    Column('pc_id', Integer, ForeignKey('pcs.pc_id'), primary_key=True)
-)
-
 # Таблица Certs ↔ PCs
 cert_pc_association = Table(
     'cert_pc', Base.metadata,
@@ -40,7 +33,7 @@ class Person(Base):
     email = Column(String)
 
     # Связи
-    cert = relationship("Cert", back_populates="person", cascade="all, delete-orphan")
+    cert = relationship("Cert", back_populates="person", cascade="all, delete", passive_deletes=True)
 
 
 class Cert(Base):
@@ -53,8 +46,8 @@ class Cert(Base):
     date_to = Column(DateTime)
 
     # Внешние ключи
-    person_id = Column(Integer, ForeignKey("persons.person_id"), nullable=False)
-    org_id = Column(Integer, ForeignKey("orgs.org_id"), nullable=False)
+    person_id = Column(Integer, ForeignKey("persons.person_id", ondelete="SET NULL"), nullable=False)
+    org_id = Column(Integer, ForeignKey("orgs.org_id", ondelete="SET NULL"), nullable=False)
     # Связи
     person = relationship("Person", back_populates="cert")
     org = relationship("Org", back_populates="cert")
@@ -84,30 +77,20 @@ class Org(Base):
     url = Column(String)
 
     # Связи
-    cert = relationship("Cert", back_populates="org", cascade="all, delete-orphan")
-
-
-class User(Base):
-    __tablename__ = 'users'
-
-    user_id = Column(Integer, primary_key=True, autoincrement=True)
-    Email = Column(String)
-    Phone = Column(String)
-    Name = Column(String)
-
-    # Связи Many-to-Many с PCs
-    pc = relationship("PC", secondary=user_pc_association, back_populates="user")
+    cert = relationship("Cert", back_populates="org", cascade="all, delete-orphan", passive_deletes=True)
 
 
 class PC(Base):
     __tablename__ = 'pcs'
 
     pc_id = Column(Integer, primary_key=True, autoincrement=True)
-    Name = Column(String)
-    Aud = Column(String)
+    domain_name = Column(String)
+    aud = Column(String)
+    email = Column(String)
+    phone = Column(String)
+    name = Column(String)
 
     # Связи Many-to-Many
-    user = relationship("User", secondary=user_pc_association, back_populates="pc")
     cert = relationship("Cert", secondary=cert_pc_association, back_populates="pc")
     service = relationship("Service", secondary=service_pc_association, back_populates="pc")
 

@@ -1,0 +1,15 @@
+<table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Имя</th>
+            <th>URL</th>
+        </tr>
+        {% for org in orgs %}
+        <tr>
+            <td>{{ org.org_id }}</td>
+            <td>{{ org.name }}</td>
+            <td>{{ org.url }}</td>
+            <td><button onclick='delete_org({{org.org_id}})'>Удалить</button></td>
+        </tr>
+        {% endfor %}
+</table>

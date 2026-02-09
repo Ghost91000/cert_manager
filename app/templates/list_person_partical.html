@@ -1,12 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Пользователи</title>
-</head>
-<body>
-    <h1>Список пользователей</h1>
-
-    <table border="1">
+<table border="1">
         <tr>
             <th>ID</th>
             <th>Имя</th>
@@ -19,11 +11,7 @@
             <td>{{ user.name }}</td>
             <td>{{ user.phone }}</td>
             <td>{{ user.email }}</td>
+            <td><button onclick='delete_person({{user.person_id}})'>Удалить</button></td>
         </tr>
         {% endfor %}
-    </table>
-
-    <br>
-    <a href="/">На главную</a>
-</body>
-</html>
+</table>

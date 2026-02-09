@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Добавить сертификат</h1>
+
+    <form>
+        <input id="name" type="text" placeholder="Название" required><br><br>
+        <input id="date_from" type="date" placeholder="Date From" required><br><br>
+        <input id="date_to" type="date" placeholder="Date To" required><br><br>
+        <input id="version" type="text" placeholder="version" required><br><br>
+        <select id="person">
+          {% for person in persons %}
+            <option>{{ person.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="org">
+          {% for org in orgs %}
+            <option>{{ org.name }}</option>
+          {% endfor %}
+        </select>
+        <button onclick="add()">Добавить</button>
+    </form>
+    <div id="list-cert">
+        {% include "list_cert_parctical.html" %}
+    </div>
+    <div style="margin-top: 20px;">
+        <button onclick="refreshTable()">Обновить таблицу</button>
+    </div>
+    <br>
+    <a href="/">На главную</a>
+     <script>
+         async function delete_person(id) {
+                const response = await fetch('/delete_person', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${encodeURIComponent(id)}`
+                });
+                refreshTable()
+         }
+
+        async function add() {
+            const name = document.getElementById('name').value;
+            const version = document.getElementById('version').value;
+            const date_from = document.getElementById('date-from').value;
+            const date_to = document.getElementById('date-to').value;
+            const person = document.getElementById('person').value;
+            const org = document.getElementById('org').value;
+
+
+            // Отправляем POST запрос
+            const response = await fetch('/add_cert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `name=${encodeURIComponent(name)}&
+                       version=${encodeURIComponent(version)}&
+                       date_from=${encodeURIComponent(date_from)}&
+                       date_to=${encodeURIComponent(date_to)}&
+                       person=${encodeURIComponent(person)}&
+                       org=${encodeURIComponent(org)}`
+                });
+
+            //refreshTable()
+
+            // Очищаем поля
+            //document.getElementById('name').value = '';
+            //document.getElementById('date_from').value = '';
+            //document.getElementById('date_to').value = '';
+            //document.getElementById('version').value = '';
+        }
+
+        // Функция обновления таблицы
+        async function refreshTable() {
+            const response = await fetch('/list_cert_partical');
+            const html = await response.text();
+            document.getElementById('list-cert').innerHTML = html;
+        }
+    </script>
+{% endblock %}

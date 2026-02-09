@@ -1,0 +1,25 @@
+<table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Имя</th>
+            <th>Версия</th>
+            <th>Начало</th>
+            <th>Конец</th>
+            <th>Владелец</th>
+            <th>Провайдер</th>
+            <th>ПК</th>
+        </tr>
+        {% for cert in certs %}
+        <tr>
+            <td>{{ cert.cert_id }}</td>
+            <td>{{ cert.name }}</td>
+            <td>{{ cert.vaersion }}</td>
+            <td>{{ cert.date_from }}</td>
+            <td>{{ cert.date_to }}</td>
+            <td>{{ cert.person }}</td>
+            <td>{{ cert.org }}</td>
+            <td>{{ cert.pc }}</td>
+            <td><button onclick='delete_cert({{cert.cert_id}})'>Удалить</button></td>
+        </tr>
+        {% endfor %}
+</table>
