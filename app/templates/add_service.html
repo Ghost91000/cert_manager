@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Добавить сервис</h1>
+
+    <form>
+        <input id="name" type="text" name="name" placeholder="Имя" required><br><br>
+        <input id="url" type="url" name="url" placeholder="URL" required><br><br>
+
+        <button onclick="add()">Добавить</button>
+    </form>
+    <div id="list-service">
+        {% include "list_service_partical.html" %}
+    </div>
+    <div style="margin-top: 20px;">
+        <button onclick="refreshTable()">Обновить таблицу</button>
+    </div>
+    <br>
+    <a href="/">На главную</a>
+    <script>
+         async function delete_service(id) {
+                const response = await fetch('/delete_service', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${encodeURIComponent(id)}`
+                });
+                refreshTable()
+         }
+        async function add() {
+            const name = document.getElementById('name').value;
+            const url = document.getElementById('url').value;
+
+            // Отправляем POST запрос
+            const response = await fetch('/add_service', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`
+                });
+
+            refreshTable()
+
+            // Очищаем поля
+            document.getElementById('name').value = '';
+            document.getElementById('url').value = '';
+        }
+
+        // Функция обновления таблицы
+        async function refreshTable() {
+            const response = await fetch('/list_service_partical');
+            const html = await response.text();
+            document.getElementById('list-service').innerHTML = html;
+        }
+    </script>
+
+{% endblock %}

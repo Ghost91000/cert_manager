@@ -1,0 +1,15 @@
+<table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Имя</th>
+            <th>URL</th>
+        </tr>
+        {% for service in services %}
+        <tr>
+            <td>{{ service.service_id }}</td>
+            <td>{{ service.name }}</td>
+            <td>{{ service.url }}</td>
+            <td><button onclick='delete_service({{service.service_id}})'>Удалить</button></td>
+        </tr>
+        {% endfor %}
+</table>

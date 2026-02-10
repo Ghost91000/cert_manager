@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Добавить пк</h1>
+
+    <form>
+        <input id="domain_name" type="text" placeholder="Название pc" required><br><br>
+        <input id="aud" type="text" placeholder="aud" required><br><br>
+        <input id="name" type="text" placeholder="user" required><br><br>
+        <input id="phone" type="text" placeholder="phone"><br><br>
+        <input id="email" type="text" placeholder="email"><br><br>
+        <fieldset>
+            <legend>Выберите сервисы:</legend>
+            {% for service in services %}
+                <div>
+                    <input
+                        type="checkbox"
+                        id="service_{{ service.service_id }}"
+                        name="service_ids"
+                        value="{{ service.service_id }}"
+                    >
+                    <label for="service_{{ service.service_id }}">
+                        {{ service.name }}
+                        <small>({{ service.url }})</small>
+                    </label>
+                </div>
+            {% endfor %}
+        </fieldset>
+        <fieldset>
+            <legend>Выберите сертификаты:</legend>
+            {% for cert in certs %}
+                <div>
+                    <input
+                        type="checkbox"
+                        id="cert_{{ cert.cert_id }}"
+                        name="cert_ids"
+                        value="{{ cert.cert_id }}"
+                    >
+                    <label for="cert_{{ cert.cert_id }}">
+                        {{ cert.name }}
+                        <small>({{cert.person.name}})</small>
+                    </label>
+                </div>
+            {% endfor %}
+        </fieldset>
+        <button onclick="add()">Добавить</button>
+    </form>
+    <div id="list-pc">
+        {% include "list_pc_partical.html" %}
+    </div>
+    <div style="margin-top: 20px;">
+        <button onclick="refreshTable()">Обновить таблицу</button>
+    </div>
+    <br>
+    <a href="/">На главную</a>
+     <script>
+         async function delete_pc(id) {
+                const response = await fetch('/delete_pc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${encodeURIComponent(id)}`
+                });
+                refreshTable()
+         }
+
+        async function add() {
+            const data = {
+                domain_name: document.getElementById('domain_name').value,
+                aud: document.getElementById('aud').value,
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                services: await getCheckedServices(),
+                certs: await getCheckedCerts()
+            }
+
+            // Отправляем POST запрос
+            const response = await fetch('/add_pc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+                });
+
+            //refreshTable()
+        }
+
+        async function getCheckedServices(){
+            const checkboxes = document.querySelectorAll('input[name="service_ids"]:checked');
+            const selected = Array.from(checkboxes).map(cb => cb.value);
+            return selected;
+        }
+
+        async function getCheckedCerts(){
+            const checkboxes = document.querySelectorAll('input[name="cert_ids"]:checked');
+            const selected = Array.from(checkboxes).map(cb => cb.value);
+            return selected;
+        }
+
+        // Функция обновления таблицы
+        async function refreshTable() {
+            const response = await fetch('/list_pc_partical');
+            const html = await response.text();
+            document.getElementById('list-pc').innerHTML = html;
+        }
+    </script>
+{% endblock %}
