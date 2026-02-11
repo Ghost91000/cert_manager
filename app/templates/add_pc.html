@@ -3,6 +3,11 @@
     <h1>Добавить пк</h1>
 
     <form>
+        <!-- Скрытое поле для режима (add или edit) -->
+        <input type="hidden" id="form_mode" value="add">
+        <!-- Скрытое поле для ID редактируемого сертификата -->
+        <input type="hidden" id="edit_id" value="">
+
         <input id="domain_name" type="text" placeholder="Название pc" required>
         <input id="aud" type="text" placeholder="aud" required>
         <input id="name" type="text" placeholder="user" required>
@@ -42,6 +47,7 @@
             {% endfor %}
         </fieldset><br>
         <button id="btn_add" onclick="add()">Добавить</button>
+        <button style="display: none; background-color: #dc3545" id="btn_clear" onclick="clearing()">Отмена</button>
     </form>
     <div id="list-pc">
         {% include "list_pc_partical.html" %}
@@ -81,9 +87,13 @@
                 cb.checked = pc_data.cert.includes(parseInt(cb.value))
             });
 
-            //document.getElementById('btn_add').textContent = "Изменить"
+            document.getElementById('btn_add').textContent = "Изменить"
+            document.getElementById('form_mode').value = "edit"
+            document.getElementById('edit_id').value = id
+            document.getElementById('btn_clear').style.display = 'inline-block';
 
         }
+
 
         async function add() {
             const data = {
