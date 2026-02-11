@@ -14,9 +14,18 @@
             <td>{{ pc.domain_name }}</td>
             <td>{{ pc.aud }}</td>
             <td>{{ pc.name }}</td>
-            <td>{{ pc.phone}}\{{pc.email }}</td>
-            <td>{{pc.cert.name}}\{{pc.cert.person}}</td>
-            <td>{{pc.service.name}}\{{pc.service.url}}</td>
+            <td>{{ pc.phone}}\{{pc.email}}</td>
+            <td>
+                {% for cer in pc.cert %}
+                    {{cer.name}}\{{cer.person.name}}<br>
+                {% endfor %}
+            </td>
+            <td>
+                {% for ser in pc.service %}
+                    {{ser.name}}\<a href="{{ser.url}}">{{ser.url}}</a><br>
+                {% endfor %}
+            </td>
+            <td><button style="background-color: #28a745" onclick='edit_pc({{pc.pc_id}})'>Редактировать</button></td>
             <td><button onclick='delete_pc({{pc.pc_id}})'>Удалить</button></td>
         </tr>
         {% endfor %}

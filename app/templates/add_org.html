@@ -16,7 +16,7 @@
         <button onclick="refreshTable()">Обновить таблицу</button>
     </div>
     <br>
-    <a href="/">На главную</a>
+
     <script>
          async function delete_org(id) {
                 const response = await fetch('/delete_org', {
@@ -46,11 +46,11 @@
                 body: `name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`
                 });
 
-            refreshTable()
+            //refreshTable()
 
             // Очищаем поля
-            document.getElementById('js-name').value = '';
-            document.getElementById('js-url').value = '';
+            //document.getElementById('js-name').value = '';
+            //document.getElementById('js-url').value = '';
         }
 
         // Функция обновления таблицы

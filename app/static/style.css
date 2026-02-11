@@ -1,0 +1,333 @@
+/* ========== ОСНОВНЫЕ СБРОСЫ ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    line-height: 1.5;
+    background-color: #f8f9fa;
+    color: #212529;
+    padding: 20px;
+
+}
+
+#content {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ========== ЗАГОЛОВКИ ========== */
+h1 {
+    font-size: 1.8rem;
+    font-weight: 500;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #0d6efd;
+    display: inline-block;
+}
+
+h2 {
+    font-size: 1.4rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: #495057;
+}
+
+/* ========== ФОРМЫ ========== */
+form {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    border: 1px solid #dee2e6;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    margin: 6px 0 16px 0;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13,110,253,0.1);
+}
+
+label {
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* ========== КНОПКИ ========== */
+button {
+    background: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin: 2px;
+}
+
+button:hover {
+    background: #0b5ed7;
+}
+
+button.delete-btn,
+button[onclick*="delete"] {
+    background: #dc3545;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+button.delete-btn:hover {
+    background: #bb2d3b;
+}
+
+/* Кнопка обновления */
+button[onclick*="refresh"] {
+    background: #6c757d;
+}
+
+button[onclick*="refresh"]:hover {
+    background: #5c636a;
+}
+
+/* ========== ТАБЛИЦЫ ========== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+}
+
+th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 14px 12px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.9rem;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover {
+    background: #f8f9fa;
+}
+
+/* ========== ТАБЛИЦА: СТАТУСЫ ========== */
+td span[style*="28a745"] {
+    background: #d1e7dd;
+    color: #0f5132;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+td span[style*="dc3545"] {
+    background: #f8dddd;
+    color: #842029;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+/* ========== ТЕГИ ПК ========== */
+td span[style*="background: var"] {
+    background: #e9ecef !important;
+    color: #495057;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin: 2px;
+}
+
+/* ========== ССЫЛКИ ========== */
+a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    color: #495057;
+}
+
+.back-link:hover {
+    background: #e9ecef;
+    text-decoration: none;
+}
+
+/* ========== ФУТЕР ========== */
+#footer {
+    text-align: center;
+    width: 100%;
+    bottom: 0px;
+    position: fixed;
+    color: #6c757d;
+    border-top: 1px solid #dee2e6;
+    font-size: 0.9rem;
+}
+
+/* ========== УВЕДОМЛЕНИЯ ========== */
+#message-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.alert {
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-left: 4px solid;
+    min-width: 300px;
+    animation: slideIn 0.3s;
+}
+
+.alert-success {
+    border-left-color: #198754;
+    background: #f1f8f5;
+}
+
+.alert-error {
+    border-left-color: #dc3545;
+    background: #fdf1f2;
+}
+
+.alert-info {
+    border-left-color: #0d6efd;
+    background: #f0f7ff;
+}
+
+/* ========== АНИМАЦИИ ========== */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ========== СПИННЕР ========== */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========== ГРИД ДЛЯ ФОРМ ========== */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    #content { padding: 20px; }
+    
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    #message-container {
+        left: 20px;
+        right: 20px;
+    }
+    
+    .alert {
+        min-width: auto;
+    }
+}
+
+/* ========== ПУСТАЯ ТАБЛИЦА ========== */
+td[colspan] {
+    text-align: center;
+    padding: 40px !important;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+/* ========== ВЫПАДАЮЩИЕ СПИСКИ ========== */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+/* ========== ЧЕКБОКСЫ ========== */
+input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+    accent-color: #0d6efd;
+}
+
+.data_input {
+  display: inline-block;
+}

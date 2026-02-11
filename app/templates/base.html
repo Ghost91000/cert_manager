@@ -2,15 +2,21 @@
 <html lang="ru">
 <head>
     {% block head %}
-    <title>{% block title %}{% endblock %} - Ebanina</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}{% endblock %} - Cert Manager</title>
+        <link rel="stylesheet" href="/static/style.css">
     {% endblock %}
 </head>
 <body>
-    <div id="content">{% block content %}{% endblock %}</div>
-    <div id="footer">
-        {% block footer %}
-        &copy; VGLTU
-        {% endblock %}
+
+    <div id="content">
+        {% block content %}{% endblock %}
+        <a href="/"><button>На главную</button></a>
     </div>
+
 </body>
+<footer id="footer">
+
+</footer>
 </html>

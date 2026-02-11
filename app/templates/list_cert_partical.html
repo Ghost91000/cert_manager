@@ -2,10 +2,11 @@
         <tr>
             <th>ID</th>
             <th>Имя</th>
-            <th>Версия</th>
+            <th>Владелец</th>
+            <th>Статус</th>
             <th>Начало</th>
             <th>Конец</th>
-            <th>Владелец</th>
+            <th>Версия</th>
             <th>Провайдер</th>
             <th>ПК</th>
         </tr>
@@ -13,12 +14,24 @@
         <tr>
             <td>{{ cert.cert_id }}</td>
             <td>{{ cert.name }}</td>
-            <td>{{ cert.version }}</td>
+            <td>{{cert.person.name}}</td>
+            <td>
+                {% if cert.is_active %}
+                    <span style="color: #28a745;">✅</span>
+                {% else %}
+                    <span style="color: #dc3545;">❌ </span>
+                {% endif %}
+            </td>
             <td>{{ cert.date_from.strftime('%d.%m.%Y') }}</td>
             <td>{{ cert.date_to.strftime('%d.%m.%Y') }}</td>
-            <td>{{cert.person.name}}</td>
+            <td>{{ cert.version }}</td>
             <td>{{cert.org.name}}</td>
-            <td>{{ cert.pc }}</td>
+            <td>
+                {% for p in cert.pc %}
+                    {{ p.domain_name }}\{{ p.name }}<br>
+                {% endfor %}
+            </td>
+            <td><button style="background-color: #28a745" onclick='delete_cert({{cert.cert_id}})'>Редактировать</button></td>
             <td><button onclick='delete_cert({{cert.cert_id}})'>Удалить</button></td>
         </tr>
         {% endfor %}

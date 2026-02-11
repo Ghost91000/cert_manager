@@ -3,11 +3,11 @@
     <h1>Добавить пк</h1>
 
     <form>
-        <input id="domain_name" type="text" placeholder="Название pc" required><br><br>
-        <input id="aud" type="text" placeholder="aud" required><br><br>
-        <input id="name" type="text" placeholder="user" required><br><br>
-        <input id="phone" type="text" placeholder="phone"><br><br>
-        <input id="email" type="text" placeholder="email"><br><br>
+        <input id="domain_name" type="text" placeholder="Название pc" required>
+        <input id="aud" type="text" placeholder="aud" required>
+        <input id="name" type="text" placeholder="user" required>
+        <input id="phone" type="text" placeholder="phone">
+        <input id="email" type="text" placeholder="email">
         <fieldset>
             <legend>Выберите сервисы:</legend>
             {% for service in services %}
@@ -18,7 +18,7 @@
                         name="service_ids"
                         value="{{ service.service_id }}"
                     >
-                    <label for="service_{{ service.service_id }}">
+                    <label for="service_{{ service.service_id }}" class="data_input">
                         {{ service.name }}
                         <small>({{ service.url }})</small>
                     </label>
@@ -35,14 +35,13 @@
                         name="cert_ids"
                         value="{{ cert.cert_id }}"
                     >
-                    <label for="cert_{{ cert.cert_id }}">
-                        {{ cert.name }}
-                        <small>({{cert.person.name}})</small>
+                    <label for="cert_{{ cert.cert_id }}" class="data_input">
+                        {{ cert.name }} <small>({{cert.person.name}})</small>
                     </label>
                 </div>
             {% endfor %}
-        </fieldset>
-        <button onclick="add()">Добавить</button>
+        </fieldset><br>
+        <button id="btn_add" onclick="add()">Добавить</button>
     </form>
     <div id="list-pc">
         {% include "list_pc_partical.html" %}
@@ -51,7 +50,6 @@
         <button onclick="refreshTable()">Обновить таблицу</button>
     </div>
     <br>
-    <a href="/">На главную</a>
      <script>
          async function delete_pc(id) {
                 const response = await fetch('/delete_pc', {
@@ -63,6 +61,29 @@
                 });
                 refreshTable()
          }
+
+        async function edit_pc(id){
+            const response = await fetch(`/edit_pc/${id}`);
+            const pc_data = await response.json();
+
+            document.getElementById('domain_name').value = pc_data.domain_name;
+            document.getElementById('aud').value = pc_data.aud;
+            document.getElementById('name').value = pc_data.name;
+            document.getElementById('phone').value = pc_data.phone;
+            document.getElementById('email').value = pc_data.email;
+
+            const checkboxes_serv = document.querySelectorAll('input[name="service_ids"]');
+            const checkboxes_cert = document.querySelectorAll('input[name="cert_ids"]');
+            checkboxes_serv.forEach(cb => {
+                cb.checked = pc_data.service.includes(parseInt(cb.value))
+            });
+            checkboxes_cert.forEach(cb => {
+                cb.checked = pc_data.cert.includes(parseInt(cb.value))
+            });
+
+            //document.getElementById('btn_add').textContent = "Изменить"
+
+        }
 
         async function add() {
             const data = {

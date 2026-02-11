@@ -1,12 +1,15 @@
 {% extends "base.html" %}
+
+{% block title %}Управление сертификатами{% endblock %}
+
 {% block content %}
     <h1>Добавить сертификат</h1>
 
     <form>
-        <input id="name" type="text" placeholder="Название" required><br><br>
-        <input id="date_from" type="date" placeholder="Date From" required><br><br>
-        <input id="date_to" type="date" placeholder="Date To" required><br><br>
-        <input id="version" type="text" placeholder="version" required><br><br>
+        <input id="name" type="text" placeholder="Название" required>
+        <div class="data_input"><input id="date_from" type="date" placeholder="Date From" required></div>
+        <div class="data_input"><input id="date_to" type="date" placeholder="Date To" required></div>
+        <input id="version" type="text" placeholder="version" required>
         <select id="person_id">
           {% for person in persons %}
             <option value="{{ person.person_id }}">{{ person.name }}</option>
@@ -26,7 +29,7 @@
         <button onclick="refreshTable()">Обновить таблицу</button>
     </div>
     <br>
-    <a href="/">На главную</a>
+
      <script>
          async function delete_cert(id) {
                 const response = await fetch('/delete_cert', {

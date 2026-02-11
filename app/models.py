@@ -58,7 +58,7 @@ class Cert(Base):
     def is_active(self):
         """Проверка, активен ли сертификат"""
         today = datetime.now().date()
-        return self.Date_from <= today <= self.Date_to
+        return today <= self.date_to.date()
 
     @property
     def days_until_expiry(self):

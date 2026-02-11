@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Form, Depends,  HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from fastapi.staticfiles import StaticFiles
 
 import models
 from database import engine, get_db
@@ -19,9 +20,7 @@ app = FastAPI()
 # 3. Настраиваем шаблоны
 templates = Jinja2Templates(directory="templates")
 
-
-
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 4. Главная страница (просто показывает форму)
 @app.get("/", response_class=HTMLResponse)
@@ -170,8 +169,8 @@ async def add_cert(
 ):
     new_cert = models.Cert(name=name,
                            version=version,
-                           date_from=datetime.strptime(date_from, "%Y-%m-%d"),
-                           date_to=datetime.strptime(date_to, "%Y-%m-%d"),
+                           date_from=datetime.strptime(date_from, "%Y-%m-%d").date(),
+                           date_to=datetime.strptime(date_to, "%Y-%m-%d").date(),
                            person_id=person_id,
                            org_id=org_id,
                            person=db.query(models.Person).get(person_id),
@@ -246,15 +245,38 @@ async def add_pc(
                            name=name,
                            phone=phone,
                            email=email)
+    serv = []
+    cer = []
     for cservice in services:
-        new_pc.service.append(db.query(models.Service).get(cservice))
+        serv.append(db.query(models.Service).get(cservice))
     for ccert in certs:
-        new_pc.cert.append(db.query(models.Cert).get(ccert))
-                          
+        cer.append(db.query(models.Cert).get(ccert))
+    new_pc.service.extend(serv)
+    new_pc.cert.extend(cer)
     db.add(new_pc)
     db.commit()
-
     return RedirectResponse("/add_pc", status_code=303)
+
+
+@app.get("/edit_pc/{id}")
+async def edit_pc(
+        id: int,
+        db: Session = Depends(get_db)
+):
+
+    pc = db.query(models.PC).get(id)
+    if not pc:
+        return HTTPException(404, f"PC {id} not found")
+    return {
+        "domain_name": pc.domain_name,
+        "aud": pc.aud,
+        "name": pc.name,
+        "phone": pc.phone,
+        "email": pc.email,
+        "service":  [service.service_id for service in pc.service],
+        "cert": [cert.cert_id for cert in pc.cert]
+    }
+
 
 
 @app.post("/delete_pc")
@@ -264,8 +286,8 @@ async def delete_pc(
         db: Session = Depends(get_db)
 ):
 
-    deleted_cert = db.query(models.Cert).get(id)
-    if deleted_cert:
-        db.delete(deleted_cert)
+    deleted_pc = db.query(models.PC).get(id)
+    if deleted_pc:
+        db.delete(deleted_pc)
         db.commit()
-    return RedirectResponse("/add_cert", status_code=303)
+    return RedirectResponse("/add_pc", status_code=303)
