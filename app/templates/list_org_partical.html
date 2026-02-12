@@ -9,6 +9,7 @@
             <td>{{ org.org_id }}</td>
             <td>{{ org.name }}</td>
             <td>{{ org.url }}</td>
+            <td><button style="background-color: #28a745" onclick='edit_org({{org.org_id}})'>Редактировать</button></td>
             <td><button onclick='delete_org({{org.org_id}})'>Удалить</button></td>
         </tr>
         {% endfor %}

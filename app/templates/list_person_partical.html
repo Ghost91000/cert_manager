@@ -11,6 +11,7 @@
             <td>{{ user.name }}</td>
             <td>{{ user.phone }}</td>
             <td>{{ user.email }}</td>
+            <td><button style="background-color: #28a745" onclick='edit_pc({{user.person_id}})'>Редактировать</button></td>
             <td><button onclick='delete_person({{user.person_id}})'>Удалить</button></td>
         </tr>
         {% endfor %}

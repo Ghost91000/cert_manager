@@ -31,7 +31,7 @@
                     {{ p.domain_name }}\{{ p.name }}<br>
                 {% endfor %}
             </td>
-            <td><button style="background-color: #28a745" onclick='delete_cert({{cert.cert_id}})'>Редактировать</button></td>
+            <td><button style="background-color: #28a745" onclick='edit_cert({{cert.cert_id}})'>Редактировать</button></td>
             <td><button onclick='delete_cert({{cert.cert_id}})'>Удалить</button></td>
         </tr>
         {% endfor %}

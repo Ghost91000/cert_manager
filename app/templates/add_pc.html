@@ -3,9 +3,7 @@
     <h1>Добавить пк</h1>
 
     <form>
-        <!-- Скрытое поле для режима (add или edit) -->
-        <input type="hidden" id="form_mode" value="add">
-        <!-- Скрытое поле для ID редактируемого сертификата -->
+        <input type="hidden" id="mode" value="add">
         <input type="hidden" id="edit_id" value="">
 
         <input id="domain_name" type="text" placeholder="Название pc" required>
@@ -87,9 +85,9 @@
                 cb.checked = pc_data.cert.includes(parseInt(cb.value))
             });
 
-            document.getElementById('btn_add').textContent = "Изменить"
-            document.getElementById('form_mode').value = "edit"
-            document.getElementById('edit_id').value = id
+            document.getElementById('btn_add').textContent = "Изменить";
+            document.getElementById('mode').value = "edit";
+            document.getElementById('edit_id').value = pc_data.id;
             document.getElementById('btn_clear').style.display = 'inline-block';
 
         }
@@ -106,16 +104,25 @@
                 certs: await getCheckedCerts()
             }
 
-            // Отправляем POST запрос
-            const response = await fetch('/add_pc', {
-                method: 'POST',
+            let url, method;
+            let mode = document.getElementById('mode').value
+            let edit_id = document.getElementById('edit_id').value
+
+            if (mode === "add") {
+                url = '/add_pc'
+                method = 'POST'
+            } else {
+                url = `/edit_pc/${edit_id}`
+                method = 'PUT'
+            }
+
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data)
                 });
-
-            //refreshTable()
         }
 
         async function getCheckedServices(){

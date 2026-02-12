@@ -4,10 +4,14 @@
 <h1>Добавить сервис</h1>
 
     <form>
+        <input type="hidden" id="mode" value="add">
+        <input type="hidden" id="edit_id" value="">
+
         <input id="name" type="text" name="name" placeholder="Имя" required><br><br>
         <input id="url" type="url" name="url" placeholder="URL" required><br><br>
 
-        <button onclick="add()">Добавить</button>
+        <button id="btn_add" onclick="add()">Добавить</button>
+        <button style="display: none; background-color: #dc3545" id="btn_clear" onclick="clearing()">Отмена</button>
     </form>
     <div id="list-service">
         {% include "list_service_partical.html" %}
@@ -27,24 +31,47 @@
                 });
                 refreshTable()
          }
+
+         async function edit_service(id){
+            const response = await fetch(`/edit_service/${id}`);
+            const data = await response.json();
+
+            document.getElementById('name').value = data.name;
+            document.getElementById('url').value = data.url;
+
+            document.getElementById('btn_add').textContent = "Изменить";
+            document.getElementById('mode').value = "edit";
+            document.getElementById('edit_id').value = id;
+            document.getElementById('btn_clear').style.display = 'inline-block';
+
+        }
+
+
         async function add() {
-            const name = document.getElementById('name').value;
-            const url = document.getElementById('url').value;
+            const data = {
+                name: document.getElementById('name').value,
+                url: document.getElementById('url').value
+            }
 
+            let url, method;
+            let mode = document.getElementById('mode').value
+            let edit_id = document.getElementById('edit_id').value
+
+           if (mode === "add") {
+                url = '/add_service'
+                method = 'POST'
+            } else {
+                url = `/edit_service/${edit_id}`
+                method = 'PUT'
+            }
             // Отправляем POST запрос
-            const response = await fetch('/add_service', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method: method,
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: `name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`
+                body: JSON.stringify(data)
                 });
-
-            refreshTable()
-
-            // Очищаем поля
-            document.getElementById('name').value = '';
-            document.getElementById('url').value = '';
         }
 
         // Функция обновления таблицы

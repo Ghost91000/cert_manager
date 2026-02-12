@@ -3,10 +3,14 @@
     <h1>Добавить пользователя</h1>
 
     <form>
-        <input id="js-name" type="text" name="name" placeholder="Имя" required><br><br>
-        <input id="js-phone" type="phone" name="phone" placeholder="Phone" required><br><br>
-        <input id="js-email" type="email" name="email" placeholder="Email" required><br><br>
-        <button onclick="addWithJS()">Добавить</button>
+        <input type="hidden" id="mode" value="add">
+        <input type="hidden" id="edit_id" value="">
+
+        <input id="name" type="text" name="name" placeholder="Имя" required><br><br>
+        <input id="phone" type="phone" name="phone" placeholder="Phone" required><br><br>
+        <input id="email" type="email" name="email" placeholder="Email" required><br><br>
+        <button id="btn_add" onclick="add()">Добавить</button>
+        <button style="display: none; background-color: #dc3545" id="btn_clear" onclick="clearing()">Отмена</button>
     </form>
     <div id="list-person">
         {% include "list_person_partical.html" %}
@@ -27,27 +31,48 @@
                 });
                 refreshTable()
          }
-        async function addWithJS() {
-            const name = document.getElementById('js-name').value;
-            const phone = document.getElementById('js-phone').value;
-            const email = document.getElementById('js-email').value;
 
+         async function edit_pc(id){
+            const response = await fetch(`/edit_person/${id}`);
+            const data = await response.json();
 
-            // Отправляем POST запрос
-            const response = await fetch('/add_person', {
-                method: 'POST',
+            document.getElementById('name').value = data.name;
+            document.getElementById('phone').value = data.phone;
+            document.getElementById('email').value = data.email;
+
+            document.getElementById('btn_add').textContent = "Изменить";
+            document.getElementById('mode').value = "edit";
+            document.getElementById('edit_id').value = id;
+            document.getElementById('btn_clear').style.display = 'inline-block';
+
+        }
+
+        async function add() {
+            const data = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+            }
+
+            let url, method;
+            let mode = document.getElementById('mode').value
+            let edit_id = document.getElementById('edit_id').value
+
+            if (mode === "add") {
+                url = '/add_person'
+                method = 'POST'
+            } else {
+                url = `/edit_person/${edit_id}`
+                method = 'PUT'
+            }
+
+            const response = await fetch(url, {
+                method: method,
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: `name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`
+                body: JSON.stringify(data)
                 });
-
-            refreshTable()
-
-            // Очищаем поля
-            document.getElementById('js-name').value = '';
-            document.getElementById('js-phone').value = '';
-            document.getElementById('js-email').value = '';
         }
 
         // Функция обновления таблицы

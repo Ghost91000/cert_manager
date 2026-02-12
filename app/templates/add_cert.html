@@ -6,6 +6,9 @@
     <h1>Добавить сертификат</h1>
 
     <form>
+        <input type="hidden" id="mode" value="add">
+        <input type="hidden" id="edit_id" value="">
+
         <input id="name" type="text" placeholder="Название" required>
         <div class="data_input"><input id="date_from" type="date" placeholder="Date From" required></div>
         <div class="data_input"><input id="date_to" type="date" placeholder="Date To" required></div>
@@ -20,7 +23,8 @@
             <option value="{{ org.org_id }}">{{ org.name }}</option>
           {% endfor %}
         </select>
-        <button onclick="add()">Добавить</button>
+        <button id="btn_add" onclick="add()">Добавить</button>
+        <button style="display: none; background-color: #dc3545" id="btn_clear" onclick="clearing()">Отмена</button>
     </form>
     <div id="list-cert">
         {% include "list_cert_partical.html" %}
@@ -42,35 +46,58 @@
                 refreshTable()
          }
 
-        async function add() {
-            const name = document.getElementById('name').value;
-            const version = document.getElementById('version').value;
-            const date_from = document.getElementById('date_from').value;
-            const date_to = document.getElementById('date_to').value;
-            const person_id = document.getElementById('person_id').value;
-            const org_id = document.getElementById('org_id').value;
 
-            const formData = new FormData();
-            formData.append('name', name);
-            formData.append('version', version);
-            formData.append('date_from', date_from);
-            formData.append('date_to', date_to);
-            formData.append('person_id', person_id);
-            formData.append('org_id', org_id);
+        async function edit_cert(id){
+            const response = await fetch(`/edit_cert/${id}`);
+            const data = await response.json();
+
+            document.getElementById('name').value = data.name;
+            document.getElementById('version').value = data.version;
+            document.getElementById('date_from').value = data.date_from;
+            document.getElementById('date_to').value = data.date_to;
+            document.getElementById('person_id').value = data.person_id;
+            document.getElementById('org_id').value = data.org_id;
+
+            document.getElementById('btn_add').textContent = "Изменить";
+            document.getElementById('mode').value = "edit";
+            document.getElementById('edit_id').value = id;
+            document.getElementById('btn_clear').style.display = 'inline-block';
+
+        }
+
+        async function add() {
+            const data = {
+                name: document.getElementById('name').value,
+                version: document.getElementById('version').value,
+                date_from: document.getElementById('date_from').value,
+                date_to: document.getElementById('date_to').value,
+                person_id: document.getElementById('person_id').value,
+                org_id: document.getElementById('org_id').value
+            }
+
+            let url, method;
+            let mode = document.getElementById('mode').value
+            let edit_id = document.getElementById('edit_id').value
+
+            if (mode === "add") {
+                url = '/add_cert'
+                method = 'POST'
+            } else {
+                url = `/edit_cert/${edit_id}`
+                method = 'PUT'
+            }
 
             // Отправляем POST запрос
-            const response = await fetch('/add_cert', {
-                method: 'POST',
-                body: formData
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
                 });
 
             refreshTable()
 
-            // Очищаем поля
-            //document.getElementById('name').value = '';
-            //document.getElementById('date_from').value = '';
-            //document.getElementById('date_to').value = '';
-            //document.getElementById('version').value = '';
         }
 
         // Функция обновления таблицы
