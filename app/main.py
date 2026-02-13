@@ -70,8 +70,9 @@ async def add_person(
         # Сохраняем в БД
         db.add(new_person)
         db.commit()
+        pers = db.query(models.Person).filter(models.Person.name == name).first()
 
-    return {"person_id": db.query(models.Person).filter(models.Person.name == name).first().person_id}
+    return {"person_id": pers.person_id, "name": pers.name}
 
 
 @app.put("/edit_person/{id}")
@@ -378,10 +379,10 @@ async def add_org(
         new_org = models.Org(name=data["name"], url=data["url"])
     except json.JSONDecodeError:
         raise HTTPException(400, "Невалидный JSON")
-
     db.add(new_org)
     db.commit()
-    return RedirectResponse("/add_org", status_code=303)
+    org = db.query(models.Org).filter(models.Org.name == data["name"]).first()
+    return {"org_id": org.org_id, "name": org.name}
 
 
 @app.put("/edit_org/{id}")

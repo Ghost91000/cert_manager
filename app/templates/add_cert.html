@@ -90,7 +90,11 @@
                     const dat_pers = await response_add_person.json()
                     console.log(dat_pers.person_id)
 
-                    //тут надо добавить новый выбор в select
+                    let opt = document.createElement('option');
+                    opt.value = dat_pers.person_id;
+                    opt.innerHTML = dat_pers.name;
+                    document.getElementById('person_id').insertAdjacentElement('beforeend', opt);
+                    document.getElementById('person_id').value = dat_pers.person_id;
 
                 } else if (data.person_id == null){
                     document.getElementById('label_person').style.display = 'inline-block'
@@ -99,7 +103,33 @@
                     document.getElementById('person_id').value = data.person_id;
                 }
 
-                //тут сделать тоже самое что и с person
+                if (add_org){
+                    const add_org = {
+                    name: data.issuer,
+                    url: "",
+                    }
+                    const response_add_org = await fetch("/add_org", {
+                        method: "POST",
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(add_org)
+                        });
+                    const dat_org = await response_add_org.json()
+                    console.log(dat_org.org_id)
+
+                    let opt = document.createElement('option');
+                    opt.value = dat_org.org_id;
+                    opt.innerHTML = dat_org.name;
+                    document.getElementById('org_id').insertAdjacentElement('beforeend', opt);
+                    document.getElementById('org_id').value = dat_org.org_id;
+
+                } else if (data.org_id == null){
+                    document.getElementById('label_org').style.display = 'inline-block'
+                    document.getElementById('org_id').value = -1;
+                } else{
+                    document.getElementById('org_id').value = data.org_id;
+                }
 
                 // Заполняем форму данными
                 document.getElementById('name').value = data.filename;
