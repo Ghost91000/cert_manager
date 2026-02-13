@@ -72,25 +72,40 @@
                 console.log('Сертификат распарсен:', data);
                 const add_pers = document.getElementById('add_person').checked
                 const add_org = document.getElementById('add_org').checked
-                // Заполняем форму данными
-                document.getElementById('name').value = data.filename || '';
-                document.getElementById('version').value = data.version || '';
-                document.getElementById('date_from').value = data.date_from;
-                document.getElementById('date_to').value = data.date_to;
 
-                if (data.person_id == null){
+
+                if (add_pers){
+                    const add_person = {
+                    name: data.subject,
+                    phone: "",
+                    email: "",
+                    }
+                    const response_add_person = await fetch("/add_person", {
+                        method: "POST",
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(add_person)
+                        });
+                    const dat_pers = await response_add_person.json()
+                    console.log(dat_pers.person_id)
+
+                    //тут надо добавить новый выбор в select
+
+                } else if (data.person_id == null){
                     document.getElementById('label_person').style.display = 'inline-block'
                     document.getElementById('person_id').value = -1;
                 } else{
                     document.getElementById('person_id').value = data.person_id;
                 }
-                if (data.org_id == null){
-                    document.getElementById('label_org').style.display = 'inline-block'
-                    document.getElementById('org_id').value = -1;
-                } else {
-                    console.log('not null');
-                    document.getElementById('org_id').value = data.org_id;
-                }
+
+                //тут сделать тоже самое что и с person
+
+                // Заполняем форму данными
+                document.getElementById('name').value = data.filename;
+                document.getElementById('version').value = data.version;
+                document.getElementById('date_from').value = data.date_from;
+                document.getElementById('date_to').value = data.date_to;
 
             } else {
                 const error = await response.text();

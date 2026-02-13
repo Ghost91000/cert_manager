@@ -63,13 +63,15 @@ async def add_person(
         email = data["email"]
     except json.JSONDecodeError:
         raise HTTPException(400, "Невалидный JSON")
+    if db.query(models.Person).filter(models.Person.name == name).first():
+        raise HTTPException(228, "already exist")
+    else:
+        new_person = models.Person(name=name, email=email, phone=phone)
+        # Сохраняем в БД
+        db.add(new_person)
+        db.commit()
 
-    new_person = models.Person(name=name, email=email, phone=phone)
-    # Сохраняем в БД
-    db.add(new_person)
-    db.commit()
-
-    return RedirectResponse("/add_person", status_code=303)
+    return {"person_id": db.query(models.Person).filter(models.Person.name == name).first().person_id}
 
 
 @app.put("/edit_person/{id}")
@@ -127,13 +129,13 @@ async def parse_cert(cert_file: UploadFile = File(...), db: Session = Depends(ge
 
     person = db.query(models.Person).filter(models.Person.name == cert["subject"]).first()
     org = db.query(models.Org).filter(models.Org.name == cert["issuer"]).first()
+    #print(person.person_id)
     try:
-        cert["person_id"] = person.id
-        cert["org_id"] = org.id
+        cert["person_id"] = person.person_id
     except AttributeError:
         cert["person_id"] = None
     try:
-        cert["org_id"] = org.id
+        cert["org_id"] = org.org_id
     except AttributeError:
         cert["org_id"] = None
     return cert
