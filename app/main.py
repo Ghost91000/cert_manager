@@ -1,13 +1,15 @@
-from fastapi import FastAPI, Request, Form, Depends,  HTTPException
+from fastapi import FastAPI, Request, Form, Depends,  HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
+from typing import Annotated
 
 import models
 from database import engine, get_db
 from datetime import datetime
 import json
+import cert_info
 
 #uvicorn main:app --reload --host 0.0.0.0
 
@@ -118,10 +120,28 @@ async def add_cert_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("add_cert.html", {"request": request, "certs": certs, "persons": persons, "orgs": orgs})
 
 
+@app.post("/cert/file")
+async def parse_cert(cert_file: UploadFile = File(...), db: Session = Depends(get_db)):
+    cert = await cert_info.get_subject(cert_file)
+    cert["filename"] = cert_file.filename
+
+    person = db.query(models.Person).filter(models.Person.name == cert["subject"]).first()
+    org = db.query(models.Org).filter(models.Org.name == cert["issuer"]).first()
+    try:
+        cert["person_id"] = person.id
+        cert["org_id"] = org.id
+    except AttributeError:
+        cert["person_id"] = None
+    try:
+        cert["org_id"] = org.id
+    except AttributeError:
+        cert["org_id"] = None
+    return cert
+
+
 @app.get("/edit_cert/{id}")
 async def add_cert_page(id: int, db: Session = Depends(get_db)):
     cert = db.query(models.Cert).get(id)
-    print(cert.person_id)
     return {
         "name": cert.name,
         "version": cert.version,

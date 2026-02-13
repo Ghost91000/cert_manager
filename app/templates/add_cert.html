@@ -13,11 +13,13 @@
         <div class="data_input"><input id="date_from" type="date" placeholder="Date From" required></div>
         <div class="data_input"><input id="date_to" type="date" placeholder="Date To" required></div>
         <input id="version" type="text" placeholder="version" required>
+        <label id="label_person" style="color: red; display: none" >Не найдено</label>
         <select id="person_id">
           {% for person in persons %}
             <option value="{{ person.person_id }}">{{ person.name }}</option>
           {% endfor %}
         </select>
+        <label id="label_org" style="color: red; display: none" >Не найдено</label>
         <select id="org_id">
           {% for org in orgs %}
             <option value="{{ org.org_id }}">{{ org.name }}</option>
@@ -26,6 +28,20 @@
         <button id="btn_add" onclick="add()">Добавить</button>
         <button style="display: none; background-color: #dc3545" id="btn_clear" onclick="clearing()">Отмена</button>
     </form>
+
+     <form>
+        <input id="cert_file" name="cert_file" type="file" accept=".crt,.pem,.cer" multiple>
+         <input type="checkbox" id="add_person" name="add_person">
+            <label class="data_input">
+                Добавить владельца сертификата
+            </label><br>
+         <input type="checkbox" id="add_org" name="add_org">
+            <label class="data_input">
+                Добавить провайдера
+            </label><br>
+        <button type="button" onclick="parse_cert()">Распарсить</button>
+     </form>
+
     <div id="list-cert">
         {% include "list_cert_partical.html" %}
     </div>
@@ -35,6 +51,55 @@
     <br>
 
      <script>
+         async function parse_cert() {
+            const formData = new FormData();
+            const fileInput = document.getElementById('cert_file');
+
+            // Проверяем, выбран ли файл
+            if (fileInput.files.length === 0) {
+                alert('Выберите файл!');
+                return;
+            }
+
+            formData.append('cert_file', fileInput.files[0]);
+            const response = await fetch('/cert/file', {
+                method: 'POST',
+                body: formData
+                });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Сертификат распарсен:', data);
+                const add_pers = document.getElementById('add_person').checked
+                const add_org = document.getElementById('add_org').checked
+                // Заполняем форму данными
+                document.getElementById('name').value = data.filename || '';
+                document.getElementById('version').value = data.version || '';
+                document.getElementById('date_from').value = data.date_from;
+                document.getElementById('date_to').value = data.date_to;
+
+                if (data.person_id == null){
+                    document.getElementById('label_person').style.display = 'inline-block'
+                    document.getElementById('person_id').value = -1;
+                } else{
+                    document.getElementById('person_id').value = data.person_id;
+                }
+                if (data.org_id == null){
+                    document.getElementById('label_org').style.display = 'inline-block'
+                    document.getElementById('org_id').value = -1;
+                } else {
+                    console.log('not null');
+                    document.getElementById('org_id').value = data.org_id;
+                }
+
+            } else {
+                const error = await response.text();
+                console.error('Ошибка:', error);
+                alert('Ошибка при парсинге сертификата');
+            }
+
+         }
+
          async function delete_cert(id) {
                 const response = await fetch('/delete_cert', {
                 method: 'POST',
@@ -45,7 +110,6 @@
                 });
                 refreshTable()
          }
-
 
         async function edit_cert(id){
             const response = await fetch(`/edit_cert/${id}`);
