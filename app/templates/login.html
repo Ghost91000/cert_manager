@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<form id="loginForm">
+  <input name="username" placeholder="login" required>
+  <input type="password" name="password" placeholder="password" required>
+  <button type="submit">Вход</button>
+</form>
+
+<script>
+  document.getElementById('loginForm').onsubmit = async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(e.target);
+
+      // ВАЖНО: отправляем как form-urlencoded, не JSON!
+      const response = await fetch('/login', {
+          method: 'POST',
+          body: new URLSearchParams(formData)  // так правильно для OAuth2
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+          // Сохраняем токен (например, в localStorage)
+          localStorage.setItem('token', data.access_token);
+          console.log('Успешный вход!');
+
+      }
+  };
+
+  async function getProtectedData() {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch('/users/me', {
+        headers: {
+            'Authorization': `Bearer ${token}`  // ← КЛАДЕМ ТОКЕН СЮДА!
+        }
+    });
+
+    const data = await response.json();
+    console.log(data);
+}
+</script>
+
+{% endblock %}

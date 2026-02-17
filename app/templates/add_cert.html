@@ -89,12 +89,15 @@
                         });
                     const dat_pers = await response_add_person.json()
                     console.log(dat_pers.person_id)
-
-                    let opt = document.createElement('option');
-                    opt.value = dat_pers.person_id;
-                    opt.innerHTML = dat_pers.name;
-                    document.getElementById('person_id').insertAdjacentElement('beforeend', opt);
-                    document.getElementById('person_id').value = dat_pers.person_id;
+                    if (dat_pers.code == 400) {
+                        document.getElementById('person_id').value = dat_pers.person_id;
+                    } else {
+                        let opt = document.createElement('option');
+                        opt.value = dat_pers.person_id;
+                        opt.innerHTML = dat_pers.name;
+                        document.getElementById('person_id').insertAdjacentElement('beforeend', opt);
+                        document.getElementById('person_id').value = dat_pers.person_id;
+                    }
 
                 } else if (data.person_id == null){
                     document.getElementById('label_person').style.display = 'inline-block'
@@ -117,12 +120,15 @@
                         });
                     const dat_org = await response_add_org.json()
                     console.log(dat_org.org_id)
-
+                    if (dat_org.code == 400) {
+                        document.getElementById('org_id').value = dat_org.org_id;
+                    } else {
                     let opt = document.createElement('option');
                     opt.value = dat_org.org_id;
                     opt.innerHTML = dat_org.name;
                     document.getElementById('org_id').insertAdjacentElement('beforeend', opt);
                     document.getElementById('org_id').value = dat_org.org_id;
+                    }
 
                 } else if (data.org_id == null){
                     document.getElementById('label_org').style.display = 'inline-block'

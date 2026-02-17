@@ -6,17 +6,54 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% block title %}{% endblock %} - Cert Manager</title>
         <link rel="stylesheet" href="/static/style.css">
+        <link rel="preload" href="/static/refresh_token.js" as="script">
+         <script ></script>
     {% endblock %}
 </head>
 <body>
 
-    <div id="content">
-        {% block content %}{% endblock %}
+    <div id="content" style="position: relative; background_color:gray;">
+        <div id="lk_menu" style="position: absolute; top: 2%; right: 1%;">
+            <button id="button_lk" onclick="show_lk_menu()">ЛК</button>
+            <div id="menu" style="display:show">
+                <div class="data_input"><input id="tg_id" type="text" placeholder="@biba@boba" required></div>
+                <div class="data_input"><button onclick="edit_tg_username()">edit</button></div>
+            </div>
+        </div>
+        {% block content %}
+
+        {% endblock %}
         <a href="/"><button>На главную</button></a>
     </div>
 
 </body>
-<footer id="footer">
+<script src="/static/refresh_token.js"></script>
+<script>
+    async function show_lk_menu(){
+        const response = await fetch('/get_tg_username', {
+                    method: 'POST',
+                    credentials: 'include'
+        });
+        const tg_username = await response.json();
+        if (response.ok) {
+            document.getElementById('tg_id').value = tg_username.usernames;
+        } else {
+            document.getElementById('tg_id').value = "";
+        }
+    }
+    async function edit_tg_username(){
+        const data  = {
+            usernames: document.getElementById('tg_id').value
+        }
+        const response = await fetch("/edit_tg_username", {
+                method: "PUT",
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+                });
+    }
+</script>
 
-</footer>
 </html>

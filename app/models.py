@@ -24,6 +24,15 @@ service_pc_association = Table(
 
 # ==================== ОСНОВНЫЕ ТАБЛИЦЫ ====================
 
+class User(Base):
+    __tablename__ = "users"
+
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
+    login = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+    tg_alert = Column(String)
+
+
 class Person(Base):
     __tablename__ = "persons"
 
