@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from typing import Annotated
+from starlette.middleware.base import BaseHTTPMiddleware
 
 import models
 from database import engine, get_db
@@ -42,32 +42,74 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 # Схема для получения токена из заголовка Authorization
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next, db: Session = Depends(get_db)):
+        #пропускаем всех по этим путям без проверки
+        if request.url.path in ["/refresh", "/login"] or request.url.path.startswith("/static/"):
+            return await call_next(request)
 
-def get_current_user_from_cookie(request: Request):
-    token = request.cookies.get(COOKIE_NAME)
-    print(token)
-    if not token:
-        raise HTTPException(401, "Не авторизован")
+        access_token = request.cookies.get(COOKIE_NAME)
+        refresh_token = request.cookies.get("refresh_token")
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("type") != "access":
-            raise HTTPException(401, "Invalid token type")
-        username = payload.get("sub")
-        if not username:
-            raise HTTPException(401, "Невалидный токен")
-        return username
-    except JWTError:
-        raise HTTPException(401, "Невалидный токен")
+        # Пробуем проверить access token
+        if access_token:
+            try:
+                jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+                # Токен валидный - просто идем дальше
+                return await call_next(request)
+            except JWTError:
+                # Токен протух или битый - пробуем обновить
+                pass
+        # Если есть refresh token - обновляем прямо здесь!
+        if refresh_token:
+            try:
+                # Проверяем refresh token
+                refresh_payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+                username = refresh_payload.get("sub")
+                if username and db.query(models.User).filter(models.User.login == username).first():
+                    # Создаем новые токены
+                    new_access = create_access_token({"sub": username})
+                    new_refresh = create_refresh_token({"sub": username})
+                    # Выполняем запрос
+                    response = await call_next(request)
+
+                    # Обновляем куки
+                    response.set_cookie(
+                        key="access_token",
+                        value=new_access,
+                        httponly=True,
+                        max_age=900,  # 15 минут
+                        path="/"
+                    )
+                    response.set_cookie(
+                        key="refresh_token",
+                        value=new_refresh,
+                        httponly=True,
+                        max_age=604800,  # 7 дней
+                        path="/"
+                    )
+
+                    print(f"🔄 Токен обновлен для {username}")
+                    return response
+
+            except JWTError:
+                # Refresh протух - чистим куки
+                print("❌ Refresh token протух")
+                response = await call_next(request)
+                response.delete_cookie("access_token", path="/")
+                response.delete_cookie("refresh_token", path="/")
+                return response
+        # Нет токенов - просто выполняем (будет 401)
+        print("⚠️ Нет токенов")
+        return RedirectResponse(url="/login", status_code=303)
+
+
+app.add_middleware(AuthMiddleware)
 
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request, current_user: dict = Depends(get_current_user_from_cookie)):
+async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
-
-@app.get("/api/protected")
-async def test(current_user: dict = Depends(get_current_user_from_cookie)):
-    return {"message": f"Hello my boy, {current_user}"}
 
 #===========================Login=======================================================================================
 
@@ -101,8 +143,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     refresh_token = create_refresh_token(data={"sub": user.login})
 
     # УСТАНАВЛИВАЕМ COOKIE
-    response = JSONResponse(content={"message": "Успешный вход"})
-
+    response = RedirectResponse(url="/", status_code=303)
     response.set_cookie(
         key=COOKIE_NAME,
         value=access_token,
@@ -122,93 +163,42 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     return response
 
 
-@app.post("/refresh")
-async def refresh_token(request: Request, db: Session = Depends(get_db)):
-    # 1. Достаем refresh token из куки
-    refresh_token = request.cookies.get(REFRESH_COOKIE_NAME)
-    if not refresh_token:
-        raise HTTPException(401, "No refresh token")
-
-    try:
-        # 2. Проверяем refresh token
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-
-        # 3. Убеждаемся, что это действительно refresh token
-        if payload.get("type") != "refresh":
-            raise HTTPException(401, "Invalid token type")
-
-        username = payload.get("sub")
-        if not username:
-            raise HTTPException(401, "Invalid token")
-
-        # 4. Проверяем, что пользователь всё ещё существует в БД
-        user = db.query(models.User).filter(models.User.login == username).first()
-        if not user:
-            raise HTTPException(401, "User not found")
-
-        # 5. Создаем НОВЫЕ токены (ROTATION — старый refresh token сгорает)
-        new_access_token = create_access_token(data={"sub": username})
-        new_refresh_token = create_refresh_token(data={"sub": username})
-
-        response = JSONResponse(content={"message": "Tokens refreshed"})
-        print("Ставим новые куки")
-        # 6. Ставим новые куки
-        response.set_cookie(
-            key=COOKIE_NAME,
-            value=new_access_token,
-            httponly=True,
-            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            path="/"
-        )
-        response.set_cookie(
-            key=REFRESH_COOKIE_NAME,
-            value=new_refresh_token,
-            httponly=True,
-            max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-            path="/"
-        )
-
-        return response
-
-    except JWTError:
-        raise HTTPException(401, "Invalid refresh token")
-
 # @app.post("/login")
 # async def login_get(
-#         login: str = Form(...),
+#         username: str = Form(...),
 #         password: str = Form(...),
 #         db: Session = Depends(get_db)
 # ):
-#     existing_user = db.query(models.User).filter(models.User.login == login).first()
+#     existing_user = db.query(models.User).filter(models.User.login == username).first()
 #     if existing_user:
 #         raise HTTPException(status_code=400, detail="already exist")
 #
 #     hashed_password = get_password_hash(password)
-#     new_user = models.User(login=login, password=hashed_password)
+#     new_user = models.User(login=username, password=hashed_password)
 #     db.add(new_user)
 #     db.commit()
 #
 #     return {"msg": "yahoo"}
 #===========================LK==========================================================================================
 
-@app.post("/get_tg_username")
+@app.post("/get_tg_username/{username}")
 async def get_tg_username(
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        username: str,
+        db: Session = Depends(get_db)
 ):
-    user = db.query(models.User).filter(models.User.login == current_user).first()
+    user = db.query(models.User).filter(models.User.login == username).first()
 
     return {"usernames": user.tg_alert}
 
 
-@app.put("/edit_tg_username")
+@app.put("/edit_tg_username/{username}")
 async def get_tg_username(
         request: Request,
+        username: str,
         db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
 ):
     data = await request.json()
-    user = db.query(models.User).filter(models.User.login == current_user).first()
+    user = db.query(models.User).filter(models.User.login == username).first()
     user.tg_alert = data["usernames"]
     db.commit()
     return JSONResponse(content={"message": "Успешное обновление"})
@@ -217,27 +207,26 @@ async def get_tg_username(
 
 
 @app.get("/add_person", response_class=HTMLResponse)
-async def add_person_page(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def add_person_page(request: Request, db: Session = Depends(get_db)):
     users = db.query(models.Person).all()
     return templates.TemplateResponse("add_person.html", {"request": request, "users": users})
 
 
 @app.get("/edit_person/{id}")
-async def add_person_page(id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def add_person_page(id: int, db: Session = Depends(get_db)):
     user = db.query(models.Person).get(id)
     return {"name": user.name, "phone": user.phone, "email": user.email}
 
 
 @app.get("/list_person_partical", response_class=HTMLResponse)
-async def list_person_partical(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def list_person_partical(request: Request, db: Session = Depends(get_db)):
     users = db.query(models.Person).all()
     return templates.TemplateResponse("list_person_partical.html", {"request": request, "users": users})
 
 @app.post("/add_person")
 async def add_person(
         request: Request,
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
 
     try:
@@ -264,8 +253,7 @@ async def add_person(
 async def edit_person(
         id: int,
         request: Request,
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     try:
         data = await request.json()
@@ -289,8 +277,7 @@ async def edit_person(
 async def delete_person(
         request: Request,
         id: str = Form(...),
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     deleted_person = db.query(models.Person).get(id)
     if deleted_person:
@@ -303,7 +290,7 @@ async def delete_person(
 
 
 @app.get("/add_cert", response_class=HTMLResponse)
-async def add_cert_page(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def add_cert_page(request: Request, db: Session = Depends(get_db)):
     certs = db.query(models.Cert).all()
     persons = db.query(models.Person).all()
     orgs = db.query(models.Org).all()
@@ -311,7 +298,7 @@ async def add_cert_page(request: Request, db: Session = Depends(get_db), current
 
 
 @app.post("/cert/file")
-async def parse_cert(cert_file: UploadFile = File(...), db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def parse_cert(cert_file: UploadFile = File(...), db: Session = Depends(get_db)):
     cert = await cert_info.get_subject(cert_file)
     cert["filename"] = cert_file.filename
 
@@ -330,7 +317,7 @@ async def parse_cert(cert_file: UploadFile = File(...), db: Session = Depends(ge
 
 
 @app.get("/edit_cert/{id}")
-async def add_cert_page(id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def add_cert_page(id: int, db: Session = Depends(get_db)):
     cert = db.query(models.Cert).get(id)
     return {
         "name": cert.name,
@@ -343,7 +330,7 @@ async def add_cert_page(id: int, db: Session = Depends(get_db), current_user: di
 
 
 @app.get("/list_cert_partical", response_class=HTMLResponse)
-async def list_cert_partical(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def list_cert_partical(request: Request, db: Session = Depends(get_db)):
     certs = db.query(models.Cert).all()
     persons = db.query(models.Person).all()
     orgs = db.query(models.Org).all()
@@ -353,8 +340,7 @@ async def list_cert_partical(request: Request, db: Session = Depends(get_db), cu
 @app.post("/add_cert")
 async def add_cert(
         request: Request,
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     try:
         data = await request.json()
@@ -385,7 +371,7 @@ async def edit_cert(
         id: int,
         request: Request,
         db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        
 ):
     cert = db.query(models.Cert).get(id)
     try:
@@ -408,7 +394,7 @@ async def delete_org(
         request: Request,
         id: str = Form(...),
         db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        
 ):
     deleted_cert = db.query(models.Cert).get(id)
     if deleted_cert:
@@ -421,7 +407,7 @@ async def delete_org(
 
 
 @app.get("/add_pc", response_class=HTMLResponse)
-async def add_pc_page(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def add_pc_page(request: Request, db: Session = Depends(get_db)):
     pcs = db.query(models.PC).all()
     services = db.query(models.Service).all()
     certs = db.query(models.Cert).all()
@@ -430,13 +416,13 @@ async def add_pc_page(request: Request, db: Session = Depends(get_db), current_u
 
 
 @app.get("/list_pc_partical", response_class=HTMLResponse)
-async def list_pc_partical(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def list_pc_partical(request: Request, db: Session = Depends(get_db)):
     pcs = db.query(models.PC).all()
     return templates.TemplateResponse("list_pc_partical.html", {"request": request, "pcs": pcs})
 
 
 @app.get("/edit_pc/{id}")
-async def edit_pc_get(id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def edit_pc_get(id: int, db: Session = Depends(get_db)):
     pc = db.query(models.PC).get(id)
     if not pc:
         raise HTTPException(404, "PC not found")
@@ -455,8 +441,7 @@ async def edit_pc_get(id: int, db: Session = Depends(get_db), current_user: dict
 @app.post("/add_pc")
 async def add_pc(
         request: Request,
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     try:
         data = await request.json()
@@ -492,8 +477,7 @@ async def add_pc(
 async def edit_pc(
         id: int,
         request: Request,
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
 
     pc = db.query(models.PC).get(id)
@@ -530,8 +514,7 @@ async def edit_pc(
 async def delete_pc(
         request: Request,
         id: str = Form(...),
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
 
     deleted_pc = db.query(models.PC).get(id)
@@ -545,19 +528,19 @@ async def delete_pc(
 
 
 @app.get("/add_org", response_class=HTMLResponse)
-async def add_org_page(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def add_org_page(request: Request, db: Session = Depends(get_db)):
     orgs = db.query(models.Org).all()
     return templates.TemplateResponse("add_org.html", {"request": request, "org": orgs})
 
 
 @app.get("/list_org_partical", response_class=HTMLResponse)
-async def list_org_partical(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def list_org_partical(request: Request, db: Session = Depends(get_db)):
     orgs = db.query(models.Org).all()
     return templates.TemplateResponse("list_org_partical.html", {"request": request, "orgs": orgs})
 
 
 @app.get("/edit_org/{id}")
-async def edit_org_data(id:int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def edit_org_data(id:int, db: Session = Depends(get_db)):
     org = db.query(models.Org).get(id)
     return {"id": org.org_id, "name": org.name, "url": org.url}
 
@@ -565,8 +548,7 @@ async def edit_org_data(id:int, db: Session = Depends(get_db), current_user: dic
 @app.post("/add_org")
 async def add_org(
         request: Request,
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     try:
         data = await request.json()
@@ -587,8 +569,7 @@ async def add_org(
 async def edit_org(
         id: int,
         request: Request,
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     org = db.query(models.Org).get(id)
     try:
@@ -606,8 +587,7 @@ async def edit_org(
 async def delete_org(
         request: Request,
         id: str = Form(...),
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     deleted_org = db.query(models.Org).get(id)
     if deleted_org:
@@ -620,18 +600,18 @@ async def delete_org(
 
 
 @app.get("/add_service", response_class=HTMLResponse)
-async def add_service_page(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def add_service_page(request: Request, db: Session = Depends(get_db)):
     services = db.query(models.Service).all()
     return templates.TemplateResponse("add_service.html", {"request": request, "services": services})
 
 
 @app.get("/list_service_partical", response_class=HTMLResponse)
-async def list_service_partical(request: Request, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def list_service_partical(request: Request, db: Session = Depends(get_db)):
     services = db.query(models.Service).all()
     return templates.TemplateResponse("list_service_partical.html", {"request": request, "services": services})
 
 @app.get("/edit_service/{id}")
-async def edit_service_get(id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user_from_cookie)):
+async def edit_service_get(id: int, db: Session = Depends(get_db)):
     services = db.query(models.Service).get(id)
     return {"name": services.name, "url": services.url}
 
@@ -640,8 +620,7 @@ async def edit_service_get(id: int, db: Session = Depends(get_db), current_user:
 async def edit_service(
         id: int,
         request: Request,
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     service = db.query(models.Service).get(id)
     try:
@@ -660,8 +639,7 @@ async def add_service(
         request: Request,
         name: str = Form(...),
         url: str = Form(...),
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
     new_service = models.Service(name=name, url=url)
     # Сохраняем в БД
@@ -676,8 +654,7 @@ async def add_service(
 async def delete_service(
         request: Request,
         id: str = Form(...),
-        db: Session = Depends(get_db),
-        current_user: dict = Depends(get_current_user_from_cookie)
+        db: Session = Depends(get_db)
 ):
 
     deleted_service = db.query(models.Service).get(id)

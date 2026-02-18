@@ -6,14 +6,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% block title %}{% endblock %} - Cert Manager</title>
         <link rel="stylesheet" href="/static/style.css">
-        <link rel="preload" href="/static/refresh_token.js" as="script">
          <script ></script>
     {% endblock %}
 </head>
 <body>
 
-    <div id="content" style="position: relative; background_color:gray;">
-        <div id="lk_menu" style="position: absolute; top: 2%; right: 1%;">
+    <div id="content" style="position: relative; background_color:gray; ">
+        <div id="lk_menu" style="position: absolute; top: 2%; right: 1%; display: none">
             <button id="button_lk" onclick="show_lk_menu()">ЛК</button>
             <div id="menu" style="display:show">
                 <div class="data_input"><input id="tg_id" type="text" placeholder="@biba@boba" required></div>
@@ -27,7 +26,6 @@
     </div>
 
 </body>
-<script src="/static/refresh_token.js"></script>
 <script>
     async function show_lk_menu(){
         const response = await fetch('/get_tg_username', {
