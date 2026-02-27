@@ -81,7 +81,7 @@
                     phone: "",
                     email: "",
                     }
-                    const response_add_person = await fetch("/add_person", {
+                    const response_add_person = await fetch("/person/add", {
                         method: "POST",
                         headers: {
                             'Content-Type': 'application/json',
@@ -112,7 +112,7 @@
                     name: data.issuer,
                     url: "",
                     }
-                    const response_add_org = await fetch("/add_org", {
+                    const response_add_org = await fetch("/org/add", {
                         method: "POST",
                         headers: {
                             'Content-Type': 'application/json',
@@ -154,7 +154,7 @@
          }
 
          async function delete_cert(id) {
-                const response = await fetch('/delete_cert', {
+                const response = await fetch('/cert/delete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -165,7 +165,7 @@
          }
 
         async function edit_cert(id){
-            const response = await fetch(`/edit_cert/${id}`);
+            const response = await fetch(`/cert/edit/${id}`);
             const data = await response.json();
 
             document.getElementById('name').value = data.name;
@@ -197,10 +197,10 @@
             let edit_id = document.getElementById('edit_id').value
 
             if (mode === "add") {
-                url = '/add_cert'
+                url = '/cert/add'
                 method = 'POST'
             } else {
-                url = `/edit_cert/${edit_id}`
+                url = `/cert/edit/${edit_id}`
                 method = 'PUT'
             }
 

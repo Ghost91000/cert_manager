@@ -56,7 +56,7 @@
     <br>
      <script>
          async function delete_pc(id) {
-                const response = await fetch('/delete_pc', {
+                const response = await fetch('/pc/delete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -67,7 +67,7 @@
          }
 
         async function edit_pc(id){
-            const response = await fetch(`/edit_pc/${id}`);
+            const response = await fetch(`/pc/edit/${id}`);
             const pc_data = await response.json();
 
             document.getElementById('domain_name').value = pc_data.domain_name;
@@ -109,10 +109,10 @@
             let edit_id = document.getElementById('edit_id').value
 
             if (mode === "add") {
-                url = '/add_pc'
+                url = '/pc/add'
                 method = 'POST'
             } else {
-                url = `/edit_pc/${edit_id}`
+                url = `/pc/edit/${edit_id}`
                 method = 'PUT'
             }
 

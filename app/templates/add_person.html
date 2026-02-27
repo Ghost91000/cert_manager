@@ -22,7 +22,7 @@
 
      <script>
          async function delete_person(id) {
-                const response = await fetch('/delete_person', {
+                const response = await fetch('/person/delete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -33,7 +33,7 @@
          }
 
          async function edit_pc(id){
-            const response = await fetch(`/edit_person/${id}`);
+            const response = await fetch(`/person/edit/${id}`);
             const data = await response.json();
 
             document.getElementById('name').value = data.name;
@@ -62,7 +62,7 @@
                 url = '/add_person'
                 method = 'POST'
             } else {
-                url = `/edit_person/${edit_id}`
+                url = `/person/edit/${edit_id}`
                 method = 'PUT'
             }
 

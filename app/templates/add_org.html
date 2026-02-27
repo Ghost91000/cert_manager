@@ -24,7 +24,7 @@
     <script>
         refreshTable()
          async function delete_org(id) {
-                const response = await fetch('/delete_org', {
+                const response = await fetch('/org/delete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -35,7 +35,7 @@
          }
 
          async function edit_org(id){
-            const response = await fetch(`/edit_org/${id}`);
+            const response = await fetch(`/org/edit/${id}`);
             const data = await response.json();
 
             document.getElementById('name').value = data.name;
@@ -59,10 +59,10 @@
             let edit_id = document.getElementById('edit_id').value
 
            if (mode === "add") {
-                url = '/add_org'
+                url = '/org/add'
                 method = 'POST'
             } else {
-                url = `/edit_org/${edit_id}`
+                url = `/org/edit/${edit_id}`
                 method = 'PUT'
             }
             // Отправляем POST запрос
