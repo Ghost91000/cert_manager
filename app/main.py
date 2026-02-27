@@ -7,12 +7,13 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from starlette.middleware.base import BaseHTTPMiddleware
 
 import models
-from database import engine, get_db
+from database import engine, get_db, SessionLocal
 from datetime import datetime, timedelta
 import json
 import cert_info
 import os
 from dotenv import load_dotenv
+import requests
 
 from auth import get_password_hash, verify_password, create_access_token, create_refresh_token
 from jose import JWTError, jwt
@@ -37,20 +38,21 @@ COOKIE_NAME = os.getenv("COOKIE_NAME")
 REFRESH_COOKIE_NAME = os.getenv("REFRESH_COOKIE_NAME")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
+TG_TOKEN = os.getenv("TG_TOKEN")
 
 
 # Схема для получения токена из заголовка Authorization
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class AuthMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next, db: Session = Depends(get_db)):
+    async def dispatch(self, request: Request, call_next):
         #пропускаем всех по этим путям без проверки
-        if request.url.path in ["/refresh", "/login"] or request.url.path.startswith("/static/"):
+        if request.url.path in ["/refresh", "/login", '/script_parcer'] or request.url.path.startswith("/static/"):
             return await call_next(request)
 
         access_token = request.cookies.get(COOKIE_NAME)
         refresh_token = request.cookies.get("refresh_token")
-
+        db = SessionLocal()
         # Пробуем проверить access token
         if access_token:
             try:
@@ -89,27 +91,40 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         path="/"
                     )
 
-                    print(f"🔄 Токен обновлен для {username}")
+                    print(f"? Токен обновлен для {username}")
                     return response
 
             except JWTError:
                 # Refresh протух - чистим куки
-                print("❌ Refresh token протух")
+                print("? Refresh token протух")
                 response = await call_next(request)
                 response.delete_cookie("access_token", path="/")
                 response.delete_cookie("refresh_token", path="/")
                 return response
         # Нет токенов - просто выполняем (будет 401)
-        print("⚠️ Нет токенов")
+        print("?? Нет токенов")
         return RedirectResponse(url="/login", status_code=303)
 
 
 app.add_middleware(AuthMiddleware)
 
 
+@app.post("/tg_alert_msg")
+async def tg_alert(request: Request):
+    r = requests.post(f'https://api.telegram.org/bot{TG_TOKEN}/getMe')
+    print(r.status_code)
+    return {"msg": "hueta"}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.post("/script_parcer")
+async def script_parcer(request: Request):
+    print(await request.json())
+
 
 #===========================Login=======================================================================================
 
@@ -136,7 +151,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     # 1. Ищем пользователя в БД
     user = db.query(models.User).filter(models.User.login == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password):
-        raise HTTPException(400, "Неверный логин или пароль")
+        #raise HTTPException(400, "Неверный логин или пароль")
+        return RedirectResponse(url="/login", status_code=303)
 
     # 3. Создаем токен
     access_token = create_access_token(data={"sub": user.login})
@@ -326,6 +342,7 @@ async def add_cert_page(id: int, db: Session = Depends(get_db)):
         "date_to": f"{cert.date_to:%Y-%m-%d}",
         "person_id": cert.person_id,
         "org_id": cert.org_id,
+        "thumbprint": cert.thumbprint
     }
 
 

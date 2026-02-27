@@ -1,0 +1,20 @@
+# 1. На вашем ПК (локально) создаём дамп
+pg_dump -h localhost -U postgres -F c -b -v -f ~/cert_manager.dump cert_manager_db
+
+# 2. Копируем дамп в контейнер
+docker cp ~/cert_manager.dump cert_manager-db-1:/cert_manager.dump
+
+# 3. Заходим в контейнер и восстанавливаем
+docker-compose exec db bash
+
+# Внутри контейнера:
+# (если БД уже существует, удалите её или создайте новую)
+dropdb -U postgres cert_manager_db --if-exists
+createdb -U postgres cert_manager_db
+pg_restore -U postgres -d cert_manager_db /cert_manager.dump
+
+# Выходим из контейнера
+exit
+
+# 4. Перезапускаем приложение
+docker-compose restart app

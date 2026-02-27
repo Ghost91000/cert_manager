@@ -6,7 +6,6 @@
             <th>Статус</th>
             <th>Начало</th>
             <th>Конец</th>
-            <th>Версия</th>
             <th>Провайдер</th>
             <th>ПК</th>
         </tr>
@@ -24,7 +23,6 @@
             </td>
             <td>{{ cert.date_from.strftime('%d.%m.%Y') }}</td>
             <td>{{ cert.date_to.strftime('%d.%m.%Y') }}</td>
-            <td>{{ cert.version }}</td>
             <td>{{cert.org.name}}</td>
             <td>
                 {% for p in cert.pc %}

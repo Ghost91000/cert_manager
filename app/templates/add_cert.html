@@ -13,6 +13,7 @@
         <div class="data_input"><input id="date_from" type="date" placeholder="Date From" required></div>
         <div class="data_input"><input id="date_to" type="date" placeholder="Date To" required></div>
         <input id="version" type="text" placeholder="version" required>
+        <span id="thumbprint"></span>
         <label id="label_person" style="color: red; display: none" >Не найдено</label>
         <select id="person_id">
           {% for person in persons %}
@@ -142,6 +143,7 @@
                 document.getElementById('version').value = data.version;
                 document.getElementById('date_from').value = data.date_from;
                 document.getElementById('date_to').value = data.date_to;
+                document.getElementById('thumbprint').textContent = data.thumbprint;
 
             } else {
                 const error = await response.text();

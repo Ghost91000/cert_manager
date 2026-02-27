@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:18.2
+    container_name: myapp-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"  # Пробрасываем порт 5433 наружу, чтобы не конфликтовать с локальным PostgreSQL, если он есть
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  app:
+    build: .
+    container_name: myapp-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app  # Монтируем код для hot-reload в режиме разработки
+    depends_on:
+      db:
+        condition: service_healthy
+    # Команда берется из Dockerfile, но ее можно переопределить здесь при необходимости
+
+volumes:
+  postgres_data:
+    name: myapp-postgres-data

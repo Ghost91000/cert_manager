@@ -66,6 +66,7 @@ class Cert(Base):
     version = Column(String)
     date_from = Column(DateTime)
     date_to = Column(DateTime)
+    thumbprint = Column(String)
 
     # Внешние ключи
     person_id = Column(Integer, ForeignKey("persons.person_id", ondelete="SET NULL"), nullable=False)
