@@ -23,6 +23,19 @@ service_pc_association = Table(
 )
 
 # ==================== ОСНОВНЫЕ ТАБЛИЦЫ ====================
+
+class PCParts(Base):
+    __tablename__ = "pc_parts"
+
+    id = Column(Integer, primary_key=True)
+    domain_name = Column(String(255), unique=True, nullable=False)
+    motherboard = Column(String(255), nullable=False)
+    processor = Column(String(255), nullable=False)
+    ddr = Column(String(255), nullable=False)
+    memory = Column(String(255), nullable=False)
+    video = Column(String(255))
+
+
 # Таблица для хранения известных пользователей бота
 class TelegramUser(Base):
     __tablename__ = "telegram_users"
@@ -112,6 +125,14 @@ class PC(Base):
     email = Column(String)
     phone = Column(String)
     name = Column(String)
+
+    motherboard = Column(String(255), nullable=False)
+    cpu = Column(String(255), nullable=False)
+    ram = Column(String(255), nullable=False)
+    storage = Column(String(255), nullable=False)
+    gpu = Column(String(255))
+
+    timestamp = Column(DateTime)
 
     # Связи Many-to-Many
     cert = relationship("Cert", secondary=cert_pc_association, back_populates="pc")

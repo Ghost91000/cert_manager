@@ -15,7 +15,7 @@ settings = get_settings()
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         #пропускаем всех по этим путям без проверки
-        if request.url.path in ["/refresh", "/auth/login", '/script_parcer'] or request.url.path.startswith("/static/"):
+        if request.url.path in ["/auth/login"] or request.url.path.startswith(("/static/", '/parcer/')):
             return await call_next(request)
 
         access_token = request.cookies.get(settings.COOKIE_NAME)
