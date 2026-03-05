@@ -4,13 +4,17 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 from app.middleware.auth import AuthMiddleware
-from app.routers import persons, login, certs, pcs, orgs, services, pc_parcer
+from app.routers import persons, login, certs, pcs, services, pc_parcer
 
 from app.database import engine
 from app.models import models
 
 import app.utils.cert_info
 
+from app.config import get_settings
+
+
+settings = get_settings()
 
 # 1. Создаем таблицы в БД
 models.Base.metadata.create_all(bind=engine)
@@ -23,13 +27,12 @@ templates = Jinja2Templates(directory="./app/templates")
 
 app.mount("/static", StaticFiles(directory="./app/static"), name="static")
 
-
 app.add_middleware(AuthMiddleware)
+
 app.include_router(persons.router)
 app.include_router(login.router)
 app.include_router(certs.router)
 app.include_router(pcs.router)
-app.include_router(orgs.router)
 app.include_router(services.router)
 app.include_router(pc_parcer.router)
 

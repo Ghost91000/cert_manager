@@ -13,7 +13,9 @@ async def get_subject(file):
     #print(cert.fingerprint(hashes.SHA1()).hex())
     return {"issuer": cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value,
             "subject": cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value,
+            "surname": cert.subject.get_attributes_for_oid(NameOID.SURNAME)[0].value,
+            "given_name": cert.subject.get_attributes_for_oid(NameOID.GIVEN_NAME)[0].value,
             "version": cert.version.value + 1,
             "thumbprint": cert.fingerprint(hashes.SHA1()).hex(),
-            "date_to": cert.not_valid_after_utc.date(),
-            "date_from": cert.not_valid_before_utc.date()}
+            "date_to": cert.not_valid_after_utc.date().strftime("%d%m%Y"),
+            "date_from": cert.not_valid_before_utc.date().strftime("%d%m%Y")}

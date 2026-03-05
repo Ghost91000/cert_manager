@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.models import Cert, Person, Org
+from app.models.models import Cert, Person
 
 from app.utils import cert_info
 from datetime import datetime
@@ -21,8 +21,7 @@ templates = Jinja2Templates(directory="app/templates")
 async def add_cert_page(request: Request, db: Session = Depends(get_db)):
     certs = db.query(Cert).all()
     persons = db.query(Person).all()
-    orgs = db.query(Org).all()
-    return templates.TemplateResponse("add_cert.html", {"request": request, "certs": certs, "persons": persons, "orgs": orgs})
+    return templates.TemplateResponse("add_cert.html", {"request": request, "certs": certs, "persons": persons})
 
 
 @router.post("/file")
@@ -31,16 +30,11 @@ async def parse_cert(cert_file: UploadFile = File(...), db: Session = Depends(ge
     cert["filename"] = cert_file.filename
 
     person = db.query(Person).filter(Person.name == cert["subject"]).first()
-    org = db.query(Org).filter(Org.name == cert["issuer"]).first()
     # print(person.person_id)
     try:
         cert["person_id"] = person.person_id
     except AttributeError:
         cert["person_id"] = None
-    try:
-        cert["org_id"] = org.org_id
-    except AttributeError:
-        cert["org_id"] = None
     return cert
 
 
@@ -62,8 +56,7 @@ async def add_cert_page(id: int, db: Session = Depends(get_db)):
 async def list_cert_partical(request: Request, db: Session = Depends(get_db)):
     certs = db.query(Cert).all()
     persons = db.query(Person).all()
-    orgs = db.query(Org).all()
-    return templates.TemplateResponse("list_cert_partical.html", {"request": request, "certs": certs, "persons": persons, "orgs": orgs})
+    return templates.TemplateResponse("list_cert_partical.html", {"request": request, "certs": certs, "persons": persons})
 
 
 @router.post("/add")
@@ -89,7 +82,7 @@ async def add_cert(
                            person_id=person_id,
                            org_id=org_id,
                            person=db.query(Person).get(person_id),
-                           org=db.query(Org).get(org_id))
+                    )
     db.add(new_cert)
     db.commit()
     return RedirectResponse("/add_cert", status_code=303)

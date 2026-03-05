@@ -1,9 +1,16 @@
-from fastapi import APIRouter, Request, File, UploadFile
+from fastapi import APIRouter, Request, File, UploadFile, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 from typing import Annotated
-from app.utils import cert_info
+from app.utils import cert_info, spec_check
+
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.models import Cert, Person, PC
+
+from datetime import datetime
+import json
 
 router = APIRouter(prefix="/parcer", tags=["parcer"])
 router.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -17,21 +24,58 @@ async def cert(
     files: Annotated[
         list[UploadFile], File(description="Multiple files as UploadFile")
     ],
+    db: Session = Depends(get_db)
 ):
-    print(f"{domain_name}/{user}")
     for file in files:
         data = await cert_info.get_subject(file)
-        print(data["thumbprint"])
+        if db.query(Cert).filter(Cert.thumbprint == data["thumbprint"]).first():
+            print(data["thumbprint"])
+        else:
+            person = db.query(Person).filter(Person.name == data["surname"] + " " + data["given_name"]).first()
+            if person is None:
+                person = Person(
+                    name = data["surname"] + " " + data["given_name"],
+                )
+                db.add(person)
+                db.commit()
+
+
+            new_cert = Cert(name=data["subject"],
+                            date_from=data["date_from"],
+                            date_to=data["date_to"],
+                            thumbprint = data["thumbprint"],
+                            org = data["issuer"],
+                            certificate = await file.read(),
+                            person_id = person.person_id,
+                            person = person,
+                            pc = db.query(PC).filter(PC.domain_name == domain_name).first(),
+                            )
+            db.add(new_cert)
+            db.commit()
 
 
 
-@router.post("/pc")
-async def pc(request: Request):
+@router.post("/pc/{domain_name}/{user}")
+async def pc(user: str, domain_name: str, request: Request, db: Session = Depends(get_db)):
     data = await request.json()
-    print(data["motherboard"])
-    print(data["cpu"])
-    print(data["gpu"])
-    print(data["ram"])
-    print(data["storage"])
-    print(data["timestamp"])
-
+    pc = db.query(PC).filter(PC.domain_name == domain_name).first()
+    if pc:
+        if pc.spec != data:
+            history = spec_check.compare(pc.spec, data)
+            pc.spec = data
+            pc.timestamp = datetime.now().strftime('%d-%m-%Y %H:%M:%S')
+            try:
+                pc.spec_history = pc.spec_history + history
+            except TypeError:
+                pc.spec_history = history
+        else:
+            pc.timestamp = datetime.now().strftime('%d-%m-%Y %H:%M:%S')
+    else:
+        new_pc = PC(
+            domain_name = domain_name,
+            name = user,
+            spec = data,
+            timestamp = datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
+        )
+        db.add(new_pc)
+    db.commit()

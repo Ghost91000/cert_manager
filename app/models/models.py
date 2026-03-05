@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, DateTime, LargeBinary, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 
 from datetime import datetime
 
@@ -23,18 +24,6 @@ service_pc_association = Table(
 )
 
 # ==================== ОСНОВНЫЕ ТАБЛИЦЫ ====================
-
-class PCParts(Base):
-    __tablename__ = "pc_parts"
-
-    id = Column(Integer, primary_key=True)
-    domain_name = Column(String(255), unique=True, nullable=False)
-    motherboard = Column(String(255), nullable=False)
-    processor = Column(String(255), nullable=False)
-    ddr = Column(String(255), nullable=False)
-    memory = Column(String(255), nullable=False)
-    video = Column(String(255))
-
 
 # Таблица для хранения известных пользователей бота
 class TelegramUser(Base):
@@ -80,13 +69,12 @@ class Cert(Base):
     date_from = Column(DateTime)
     date_to = Column(DateTime)
     thumbprint = Column(String)
+    certificate = Column(LargeBinary)
 
     # Внешние ключи
     person_id = Column(Integer, ForeignKey("persons.person_id", ondelete="SET NULL"), nullable=False)
-    org_id = Column(Integer, ForeignKey("orgs.org_id", ondelete="SET NULL"), nullable=False)
     # Связи
     person = relationship("Person", back_populates="cert")
-    org = relationship("Org", back_populates="cert")
     # Связь Many-to-Many с PCs
     pc = relationship("PC", secondary=cert_pc_association, back_populates="cert")
 
@@ -105,32 +93,19 @@ class Cert(Base):
         return (self.Date_to - today).days
 
 
-class Org(Base):
-    __tablename__ = "orgs"
-
-    org_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, unique=True, nullable=False)
-    url = Column(String)
-
-    # Связи
-    cert = relationship("Cert", back_populates="org", cascade="all, delete-orphan", passive_deletes=True)
-
-
 class PC(Base):
     __tablename__ = 'pcs'
 
     pc_id = Column(Integer, primary_key=True, autoincrement=True)
     domain_name = Column(String)
+
     aud = Column(String)
     email = Column(String)
     phone = Column(String)
     name = Column(String)
 
-    motherboard = Column(String(255), nullable=False)
-    cpu = Column(String(255), nullable=False)
-    ram = Column(String(255), nullable=False)
-    storage = Column(String(255), nullable=False)
-    gpu = Column(String(255))
+    spec = Column(JSONB)
+    spec_history = Column(ARRAY(JSONB))
 
     timestamp = Column(DateTime)
 

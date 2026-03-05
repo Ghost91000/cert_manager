@@ -4,6 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
 
+    PRIVATE_KEY_HEX: str = "f0aadfc81b9c6383ccb597d0fd8bfc1a956d35022a36c3d0b7531814b5e54e73"
     SECRET_KEY: str = "gV64m9aIzFG4qpgVphvQbPQrtAO0nM-7YwwOvu0XPt5KJOjAy4AfgLkqJXYEt"
     DEBUG: bool = True
     ALGORITHM: str = "HS256"
