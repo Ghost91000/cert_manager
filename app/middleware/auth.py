@@ -48,14 +48,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         key="access_token",
                         value=new_access,
                         httponly=True,
-                        max_age=900,  # 15 минут
+                        secure=True,
+                        max_age=settings.ACCESS_TOKEN_EXPIRE_SECONDS,
                         path="/"
                     )
                     response.set_cookie(
                         key="refresh_token",
                         value=new_refresh,
                         httponly=True,
-                        max_age=604800,  # 7 дней
+                        secure=True,
+                        max_age=settings.REFRESH_TOKEN_EXPIRE_SECONDS,
                         path="/"
                     )
 

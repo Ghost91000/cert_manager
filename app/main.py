@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 from app.middleware.auth import AuthMiddleware
-from app.routers import persons, login, certs, pcs, services, pc_parcer
+from app.routers import persons, login, certs, pcs, services, pc_parcer, monitor_pc
 
 from app.database import engine
 from app.models import models
@@ -35,6 +35,7 @@ app.include_router(certs.router)
 app.include_router(pcs.router)
 app.include_router(services.router)
 app.include_router(pc_parcer.router)
+app.include_router(monitor_pc.router)
 
 
 @app.get("/", response_class=HTMLResponse)

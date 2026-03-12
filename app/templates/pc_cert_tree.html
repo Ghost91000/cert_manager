@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>PC Cert tree</h1>
+    {% for pc in pcs %}
+    <details>
+        <summary>{{pc.domain_name}}/{{pc.name}}</summary>
+        <div style="margin-left: 3%">
+            <details>
+                <summary>Сертификаты</summary>
+                <div style="margin-left: 3%">
+                    <details>
+                        <summary>Действующие</summary>
+                        {% for cert in pc.cert %}
+                            {% if cert.is_active %}
+                                <div style="margin-left: 3%">
+                                    <details>
+                                        <summary>
+                                            ✅{{cert.name}}
+                                        </summary>
+                                        <div style="margin-left: 3%">
+
+                                            <p>Действует с: {{cert.date_from.strftime('%d.%m.%Y')}}</p>
+                                            <p>Действует по: {{cert.date_to.strftime('%d.%m.%Y')}}</p>
+                                        </div>
+                                    </details>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </details>
+                    <details>
+                        <summary>Просрочка</summary>
+                        {% for cert in pc.cert %}
+                            {% if not cert.is_active %}
+                                <div style="margin-left: 3%">
+                                    <details>
+                                        <summary>
+                                            ❌{{cert.name}}
+
+                                        </summary>
+                                        <div style="margin-left: 3%">
+
+                                            <p>Действует с: {{cert.date_from.strftime('%d.%m.%Y')}}</p>
+                                            <p>Действует по: {{cert.date_to.strftime('%d.%m.%Y')}}</p>
+                                        </div>
+                                    </details>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </details>
+                </div>
+            </details>
+
+            <details>
+                <summary>Характеристики</summary>
+                <div style="margin-left: 3%">
+                    <p>CPU:{{ pc.spec["cpu"].name if pc.spec["cpu"] is mapping else 'error' }}</p>
+                    <p>GPU:{{ pc.spec["gpu"].name if pc.spec["gpu"] is mapping else 'error' }}</p>
+                    <p>RAM:{{ pc.spec["ram"].totalGB }}
+                        {% if pc.spec["ram"].modules is mapping %}
+                            ( one plate )
+                        {% else %}
+                            ({% for ram in pc.spec["ram"].modules %} {{ ram["capacityGB"] }}gb {% endfor %})
+                        {% endif %}
+                    </p>
+                    <p>Storage: {% for storage in pc.spec["storage"] %} {{ storage["sizeGB"] }}gb {% endfor %}</p>
+                </div>
+            </details>
+        </div>
+    </details>
+    {% endfor %}
+
+{% endblock %}

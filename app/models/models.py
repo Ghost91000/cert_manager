@@ -12,15 +12,15 @@ Base = declarative_base()
 # Таблица Certs ↔ PCs
 cert_pc_association = Table(
     'cert_pc', Base.metadata,
-    Column('pc_id', Integer, ForeignKey('pcs.pc_id'), primary_key=True),
-    Column('cert_id', Integer, ForeignKey('certs.cert_id'), primary_key=True)
+    Column('pc_id', Integer, ForeignKey('pcs.pc_id', ondelete="CASCADE"), primary_key=True),
+    Column('cert_id', Integer, ForeignKey('certs.cert_id', ondelete="CASCADE"), primary_key=True)
 )
 
 # Таблица Services ↔ PCs
 service_pc_association = Table(
     'service_pc', Base.metadata,
-    Column('service_id', Integer, ForeignKey('services.service_id'), primary_key=True),
-    Column('pc_id', Integer, ForeignKey('pcs.pc_id'), primary_key=True)
+    Column('service_id', Integer, ForeignKey('services.service_id', ondelete="CASCADE"), primary_key=True),
+    Column('pc_id', Integer, ForeignKey('pcs.pc_id', ondelete="CASCADE"), primary_key=True)
 )
 
 # ==================== ОСНОВНЫЕ ТАБЛИЦЫ ====================
@@ -70,13 +70,14 @@ class Cert(Base):
     date_to = Column(DateTime)
     thumbprint = Column(String)
     certificate = Column(LargeBinary)
+    org = Column(String)
 
     # Внешние ключи
     person_id = Column(Integer, ForeignKey("persons.person_id", ondelete="SET NULL"), nullable=False)
     # Связи
     person = relationship("Person", back_populates="cert")
     # Связь Many-to-Many с PCs
-    pc = relationship("PC", secondary=cert_pc_association, back_populates="cert")
+    pc = relationship("PC", secondary=cert_pc_association, back_populates="cert", cascade="all, delete")
 
     @property
     def is_active(self):
@@ -110,8 +111,8 @@ class PC(Base):
     timestamp = Column(DateTime)
 
     # Связи Many-to-Many
-    cert = relationship("Cert", secondary=cert_pc_association, back_populates="pc")
-    service = relationship("Service", secondary=service_pc_association, back_populates="pc")
+    cert = relationship("Cert", secondary=cert_pc_association, back_populates="pc", cascade="all, delete")
+    service = relationship("Service", secondary=service_pc_association, back_populates="pc", cascade="all, delete")
 
 
 class Service(Base):

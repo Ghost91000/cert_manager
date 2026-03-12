@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -8,9 +8,11 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.models import User
 
-from app.middleware.hash_tokens import verify_password, create_access_token, create_refresh_token
+from app.middleware.hash_tokens import verify_password, create_access_token, create_refresh_token, get_password_hash
 
 from app.config import get_settings
+
+from jose import JWTError, jwt
 
 settings = get_settings()
 
@@ -30,6 +32,25 @@ async def logout():
     response = JSONResponse(content={"message": "Logged out"})
     response.delete_cookie(settings.COOKIE_NAME, path="/")
     response.delete_cookie(settings.REFRESH_COOKIE_NAME, path="/")
+    return response
+
+
+@router.put("/change_password")
+async def logout(request: Request, response: Response, db: Session = Depends(get_db)):
+    data = await request.json()
+    access_token = request.cookies.get(settings.COOKIE_NAME)
+    payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    username = payload.get("sub")
+    user = db.query(User).filter(User.login == username).first()
+    if not user or not verify_password(data["old_pass"], user.password):
+        response =  JSONResponse(content={"message": "old password is incorrect"}, status_code=400)
+    else:
+        user.password = get_password_hash(data["new_pass"])
+        db.commit()
+        response = JSONResponse(content={"message": "password changed successfully"}, status_code=200)
+        response.delete_cookie(settings.COOKIE_NAME, path="/")
+        response.delete_cookie(settings.REFRESH_COOKIE_NAME, path="/")
+
     return response
 
 
@@ -56,16 +77,17 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         key=settings.COOKIE_NAME,
         value=access_token,
         httponly=True,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=True,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_SECONDS,
         path="/"
     )
 
-    # Refresh token — живет 7 дней
     response.set_cookie(
         key=settings.REFRESH_COOKIE_NAME,
         value=refresh_token,
         httponly=True,
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        secure=True,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_SECONDS,
         path="/"
     )
     return response

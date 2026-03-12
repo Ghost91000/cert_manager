@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request, File, UploadFile, Depends
+from fastapi import APIRouter, Request, File, UploadFile, Depends, status
+from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
@@ -10,7 +11,7 @@ from app.database import get_db
 from app.models.models import Cert, Person, PC
 
 from datetime import datetime
-import json
+
 
 router = APIRouter(prefix="/parcer", tags=["parcer"])
 router.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -26,10 +27,15 @@ async def cert(
     ],
     db: Session = Depends(get_db)
 ):
+    if len(files) == 0:
+        return JSONResponse(status_code=status.HTTP_201_CREATED, content="No file was uploaded")
+
     for file in files:
         data = await cert_info.get_subject(file)
-        if db.query(Cert).filter(Cert.thumbprint == data["thumbprint"]).first():
-            print(data["thumbprint"])
+        pc = db.query(PC).filter(PC.domain_name == domain_name).first()
+        cert = db.query(Cert).filter(Cert.thumbprint == data["thumbprint"]).first()
+        if cert:
+            cert.pc = [pc]
         else:
             person = db.query(Person).filter(Person.name == data["surname"] + " " + data["given_name"]).first()
             if person is None:
@@ -37,8 +43,6 @@ async def cert(
                     name = data["surname"] + " " + data["given_name"],
                 )
                 db.add(person)
-                db.commit()
-
 
             new_cert = Cert(name=data["subject"],
                             date_from=data["date_from"],
@@ -48,10 +52,11 @@ async def cert(
                             certificate = await file.read(),
                             person_id = person.person_id,
                             person = person,
-                            pc = db.query(PC).filter(PC.domain_name == domain_name).first(),
+                            pc = [pc],
                             )
             db.add(new_cert)
-            db.commit()
+        db.commit()
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content="File was uploaded")
 
 
 
@@ -79,3 +84,4 @@ async def pc(user: str, domain_name: str, request: Request, db: Session = Depend
         )
         db.add(new_pc)
     db.commit()
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content="Spec uploaded")

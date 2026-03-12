@@ -10,13 +10,20 @@
     {% endblock %}
 </head>
 <body>
-
     <div id="content" style="position: relative; background_color:gray; ">
-        <div id="lk_menu" style="position: absolute; top: 2%; right: 1%; display: none">
-            <button id="button_lk" onclick="show_lk_menu()">ЛК</button>
-            <div id="menu" style="display:show">
-                <div class="data_input"><input id="tg_id" type="text" placeholder="@biba@boba" required></div>
-                <div class="data_input"><button onclick="edit_tg_username()">edit</button></div>
+        <div id="lk_menu" style="position: absolute; top: 2%; right: 1%">
+            <button id="button_lk" onclick="show_lk_menu()" style="position: absolute; top: 2%; right: 1%">ЛК</button>
+            <div id="menu" style="display:none; margin-top: 25%;">
+                <p>Изменение пароля</p>
+                <div class="data_input" style="display:block"><input id="old_password" type="password" placeholder="old" required></div>
+                <div class="data_input" style="display:none; color: red;" id="alert_pass"><p>Пароли не совпадают</p></div>
+                <div class="data_input" style="display:block"><input id="new_password" type="password" placeholder="new" required></div>
+                <div class="data_input" style="display:block"><input id="new_repeat_password" type="password" placeholder="repeat new" required></div>
+
+                <div class="data_input" style="display:block"><button onclick="channge_password()">Изменить</button></div>
+                <div class="data_input" style="display:none; color: red;" id="msg"></div>
+
+                <div class="data_input" style="display:block"><button onclick="logout()">Выход</button></div>
             </div>
         </div>
         {% block content %}
@@ -27,31 +34,60 @@
 
 </body>
 <script>
-    async function show_lk_menu(){
-        const response = await fetch('/get_tg_username', {
-                    method: 'POST',
-                    credentials: 'include'
-        });
-        const tg_username = await response.json();
-        if (response.ok) {
-            document.getElementById('tg_id').value = tg_username.usernames;
+
+    async function channge_password(){
+        document.getElementById('msg').style.display = "none";
+        document.getElementById('alert_pass').style.display = "none";
+        if (document.getElementById('new_password').value === document.getElementById('new_repeat_password').value){
+            const data  = {
+                old_pass: document.getElementById('old_password').value,
+                new_pass: document.getElementById('new_password').value
+            };
+            const response = await fetch("/auth/change_password", {
+                    method: "PUT",
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+            });
+            const answer = await response.json();
+            console.log(answer);
+            document.getElementById('old_password').value = "";
+            document.getElementById('new_password').value = "";
+            document.getElementById('new_repeat_password').value = "";
+            document.getElementById('msg').textContent = answer['message'];
+            document.getElementById('msg').style.display = "block";
         } else {
-            document.getElementById('tg_id').value = "";
+            document.getElementById('old_password').value = "";
+            document.getElementById('new_password').value = "";
+            document.getElementById('new_repeat_password').value = "";
+            document.getElementById('alert_pass').style.display = "block";
         }
     }
-    async function edit_tg_username(){
-        const data  = {
-            usernames: document.getElementById('tg_id').value
+
+    function show_lk_menu(){
+        menu = document.getElementById('menu');
+        if (menu.style.display === "none"){
+            menu.style.display = "block";
+        }else{
+            menu.style.display = "none";
         }
-        const response = await fetch("/edit_tg_username", {
-                method: "PUT",
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-                });
     }
+
+    async function logout(){
+        await fetch("/auth/logout", {
+            method: "POST",
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: ''  // Пустое тело запроса
+        });
+        location.reload();
+    }
+
+
 </script>
 
 </html>
