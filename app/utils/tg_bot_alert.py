@@ -9,8 +9,8 @@ settings = get_settings()
 
 
 class TelegramBot:
-    def __init__(self, token):
-        self.token = token
+    def __init__(self):
+        self.token = settings.TG_TOKEN
         self.base_url = f"https://api.telegram.org/bot{self.token}"
         self.timeout = 10
 
@@ -62,6 +62,7 @@ class TelegramBot:
         }
 
         updates = self._make_request('getUpdates', params)
+
 
         if not updates:
             print("Нет новых сообщений. Напишите что-нибудь боту и попробуйте снова.")
@@ -121,10 +122,3 @@ class TelegramBot:
             print(f"✗ Ошибка отправки в чат {chat_id}")
 
         return result
-
-
-
-# Использование
-notifier = TelegramBot(settings.TG_TOKEN)
-print(notifier.get_chat_ids())
-notifier.send_message(925869845, "hueta")

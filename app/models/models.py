@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, LargeBinary, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, DateTime, LargeBinary, ForeignKey, Table, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY
@@ -30,9 +30,10 @@ class TelegramUser(Base):
     __tablename__ = "telegram_users"
 
     id = Column(Integer, primary_key=True)
-    telegram_id = Column(Integer, unique=True, nullable=False)  # ID в Telegram
+    telegram_id = Column(Integer, unique=True)  # ID в Telegram
     username = Column(String(255), unique=True, nullable=False)  # @username
     chat_id = Column(Integer, nullable=False)  # для отправки сообщений
+    is_active = Column(Boolean, nullable=False)
 
 
     def __repr__(self):

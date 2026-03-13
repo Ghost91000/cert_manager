@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h1>tg_chat</h1>
+  <fieldset>
+    <legend>Выбери телеграмм аккаунты для уведомлений:</legend>
+    {% for tg_user in tg_users %}
+        <div>
+            <input
+                type="checkbox"
+                id="chat_{{ tg_user.chat_id }}"
+                name="chat_id"
+                value="{{ tg_user.chat_id }}"
+                {% if tg_user.is_active %}
+                    checked
+                {% endif %}
+            >
+            <label for="chat_{{ tg_user.chat_id }}" class="data_input">
+                {{ tg_user.username }}
+            </label>
+        </div>
+    {% endfor %}
+  </fieldset>
+  <button onclick="accept()">Применить</button>
+
+<script>
+
+  async function accept() {
+    const data = {
+        chats: await getCheckboxes()
+    };
+
+    console.log(JSON.stringify(data));
+
+    const response = await fetch("/telegram_alert/update_alert", {
+      method: "POST",
+      headers: {
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+
+    const answer = await response.json();
+
+  }
+
+  async function getCheckboxes(){
+            const checkboxes = document.querySelectorAll('input[name="chat_id"]:checked');
+            const selected = Array.from(checkboxes).map(cb => cb.value);
+            return selected;
+        }
+
+</script>
+
+{% endblock %}
